@@ -1,5 +1,6 @@
 import { DtoSchedule } from '../../../api/interfaces/dto_schedule';
 import { RunResult } from '../../../api/interfaces/dto_run_result';
+import * as _ from 'lodash';
 
 export interface ScheduleState {
 

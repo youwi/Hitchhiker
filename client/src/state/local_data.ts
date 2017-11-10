@@ -1,4 +1,5 @@
 import { RequestState, requestStateDefaultValue } from './request';
+import * as _ from 'lodash';
 
 export class LocalDataState {
 

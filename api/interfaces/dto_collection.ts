@@ -1,5 +1,5 @@
 import { DtoRecord } from './dto_record';
-
+import * as _ from 'lodash';
 export interface DtoCollection {
 
     id: string;

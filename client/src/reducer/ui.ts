@@ -4,6 +4,7 @@ import { combineReducers } from 'redux';
 import { ResizeLeftPanelType, UpdateLeftPanelType, SelectReqTabType, SelectResTabType, ToggleReqPanelVisibleType, ResizeResHeightType, SwitchHeadersEditModeType, CloseTimelineType } from '../action/ui';
 import { SyncType, SyncSuccessType, SyncRetryType, ResetSyncMsgType, SyncFailedType } from '../action/index';
 import { RemoveTabType, SaveRecordType } from '../action/record';
+import * as _ from 'lodash';
 
 export function uiState(state: UIState = uiDefaultValue, action: any): UIState {
     return combineReducers<UIState>({

@@ -8,6 +8,7 @@ import { allProject, newRecordFlag, newRequestName, allParameter } from '../comm
 import { ParameterType } from '../common/parameter_type';
 import { RequestStatus } from '../common/request_status';
 import { ConflictType } from '../common/conflict_type';
+import * as _ from 'lodash';
 
 export function getDefaultRecord(isInit: boolean = false): DtoRecord {
     return {

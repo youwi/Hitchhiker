@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
 import { Schedule } from './schedule';
 import { RunResult } from '../interfaces/dto_run_result';
+import * as _ from 'lodash';
 
 @Entity()
 export class ScheduleRecord {
