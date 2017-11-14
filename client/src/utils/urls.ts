@@ -1,6 +1,6 @@
 export class Urls {
 
-    static host = 'http://localhost:3000/';
+    static host = 'HITCHHIKER_APP_HOST';
 
     static getUrl(action: string): string {
         return `${Urls.host}api/${action}`;

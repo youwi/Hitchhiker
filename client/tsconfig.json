@@ -29,7 +29,7 @@
   "exclude": [
     "node_modules",
     "build",
-    "scripts",
+    "build-scripts",
     "acceptance-tests",
     "webpack",
     "jest",
