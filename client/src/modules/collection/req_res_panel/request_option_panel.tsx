@@ -3,7 +3,7 @@ import { connect, Dispatch } from 'react-redux';
 import { Tabs, Badge, Radio, Select, Icon } from 'antd';
 import RequestTabExtra from './request_tab_extra';
 import { normalBadgeStyle } from '../../../style/theme';
-import { DtoHeader } from '../../../../../api/interfaces/dto_header';
+import { DtoHeader } from '../../../../../server/src/interfaces/dto_header';
 import { actionCreator } from '../../../action/index';
 import { SelectReqTabType } from '../../../action/ui';
 import { KeyValueEditMode } from '../../../common/custom_type';
@@ -14,7 +14,7 @@ import { UpdateDisplayRecordPropertyType, ChangeCurrentParamType } from '../../.
 import { bodyTypes } from '../../../common/body_type';
 import { defaultBodyType, allParameter } from '../../../common/constants';
 import { getActiveRecordSelector, getReqActiveTabKeySelector, getHeadersEditModeSelector, getActiveRecordStateSelector } from './selector';
-import { DtoRecord } from '../../../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../../../server/src/interfaces/dto_record';
 import { RecordState, ParameterStatusState } from '../../../state/collection';
 import { State } from '../../../state/index';
 import * as _ from 'lodash';

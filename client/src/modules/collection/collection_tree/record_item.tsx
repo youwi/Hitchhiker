@@ -4,7 +4,7 @@ import ItemWithMenu from '../../../components/item_with_menu';
 import './style/index.less';
 import { Menu, Icon, Badge } from 'antd';
 import { confirmDlg } from '../../../components/confirm_dialog/index';
-import { DtoRecord } from '../../../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../../../server/src/interfaces/dto_record';
 import { StringUtil } from '../../../utils/string_util';
 
 interface RecordItemProps {

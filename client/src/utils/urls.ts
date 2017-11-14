@@ -1,6 +1,6 @@
 export class Urls {
 
-    static host = 'HITCHHIKER_APP_HOST';
+    static host = require("../config").env.HOST//'HITCHHIKER_APP_HOST';
 
     static getUrl(action: string): string {
         return `${Urls.host}api/${action}`;

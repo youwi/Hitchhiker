@@ -1,5 +1,5 @@
-import { DtoProject } from '../../../api/interfaces/dto_project';
-import { ProjectFiles } from '../../../api/interfaces/dto_project_data';
+import { DtoProject } from '../../../server/src/interfaces/dto_project';
+import { ProjectFiles } from '../../../server/src/interfaces/dto_project_data';
 
 export interface ProjectState {
 

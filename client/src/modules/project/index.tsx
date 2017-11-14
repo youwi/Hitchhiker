@@ -5,19 +5,19 @@ import Splitter from '../../components/splitter';
 import ProjectList from './project_list';
 import Members from './members';
 import Environments from './environments';
-import { DtoProject } from '../../../../api/interfaces/dto_project';
+import { DtoProject } from '../../../../server/src/interfaces/dto_project';
 import { State } from '../../state';
 import { actionCreator } from '../../action';
 import { UpdateLeftPanelType, ResizeLeftPanelType } from '../../action/ui';
 import { EditEnvType, DisbandProjectType, QuitProjectType, SaveProjectType, RemoveUserType, InviteMemberType, SaveEnvironmentType, DelEnvironmentType, ActiveProjectType, EditEnvCompletedType, SaveLocalhostMappingType, SaveGlobalFunctionType, DeleteProjectFileType, AddProjectFileType } from '../../action/project';
-import { DtoUser } from '../../../../api/interfaces/dto_user';
-import { DtoEnvironment } from '../../../../api/interfaces/dto_environment';
+import { DtoUser } from '../../../../server/src/interfaces/dto_user';
+import { DtoEnvironment } from '../../../../server/src/interfaces/dto_environment';
 import * as _ from 'lodash';
 import './style/index.less';
 import { localhost } from '../../common/constants';
 import { StringUtil } from '../../utils/string_util';
 import { ProjectFileType } from '../../common/custom_type';
-import { ProjectFiles } from '../../../../api/interfaces/dto_project_data';
+import { ProjectFiles } from '../../../../server/src/interfaces/dto_project_data';
 
 const { Content, Sider } = Layout;
 

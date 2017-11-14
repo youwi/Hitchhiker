@@ -1,16 +1,16 @@
 import React from 'react';
 import { Table, Tag, Tooltip, Button, message } from 'antd';
-import { DtoScheduleRecord } from '../../../../api/interfaces/dto_schedule_record';
-import { RunResult } from '../../../../api/interfaces/dto_run_result';
+import { DtoScheduleRecord } from '../../../../server/src/interfaces/dto_schedule_record';
+import { RunResult } from '../../../../server/src/interfaces/dto_run_result';
 import * as _ from 'lodash';
-import { DtoRecord } from '../../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../../server/src/interfaces/dto_record';
 import { noEnvironment, unknownName, successColor, failColor, pass, fail, match, notMatch, notMatchButIgnore, defaultExport } from '../../common/constants';
 import CopyToClipboard from 'react-copy-to-clipboard';
 import { StringUtil } from '../../utils/string_util';
 import Editor from '../../components/editor';
 import ScheduleRunConsole from './schedule_run_console';
 import './style/index.less';
-import { DtoSchedule } from '../../../../api/interfaces/dto_schedule';
+import { DtoSchedule } from '../../../../server/src/interfaces/dto_schedule';
 
 type DisplayRunResult = RunResult & { key: string, isOrigin: boolean, compareResult: string, rowSpan: number };
 

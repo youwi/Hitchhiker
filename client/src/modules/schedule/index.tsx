@@ -1,11 +1,11 @@
 import React from 'react';
 import { connect, Dispatch } from 'react-redux';
 import ScheduleList from './schedule_list';
-import { DtoSchedule } from '../../../../api/interfaces/dto_schedule';
-import { DtoUser } from '../../../../api/interfaces/dto_user';
+import { DtoSchedule } from '../../../../server/src/interfaces/dto_schedule';
+import { DtoUser } from '../../../../server/src/interfaces/dto_user';
 import { State } from '../../state/index';
 import * as _ from 'lodash';
-import { DtoEnvironment } from '../../../../api/interfaces/dto_environment';
+import { DtoEnvironment } from '../../../../server/src/interfaces/dto_environment';
 import { actionCreator } from '../../action/index';
 import { Layout } from 'antd';
 import Splitter from '../../components/splitter';
@@ -14,9 +14,9 @@ import { SaveScheduleType, ActiveScheduleType, DeleteScheduleType, RunScheduleTy
 import ScheduleInfo from './schedule_info';
 import ScheduleRunHistoryGrid from './schedule_run_history_grid';
 import { noEnvironment, unknownName } from '../../common/constants';
-import { DtoRecord } from '../../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../../server/src/interfaces/dto_record';
 import { ScheduleRunState } from '../../state/schedule';
-import { DtoCollection } from '../../../../api/interfaces/dto_collection';
+import { DtoCollection } from '../../../../server/src/interfaces/dto_collection';
 
 const { Content, Sider } = Layout;
 

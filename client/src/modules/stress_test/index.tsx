@@ -1,20 +1,20 @@
 import React from 'react';
 import { connect, Dispatch } from 'react-redux';
 import StressList from './stress_list';
-import { DtoStress } from '../../../../api/interfaces/dto_stress';
-import { DtoUser } from '../../../../api/interfaces/dto_user';
+import { DtoStress } from '../../../../server/src/interfaces/dto_stress';
+import { DtoUser } from '../../../../server/src/interfaces/dto_user';
 import { State } from '../../state/index';
 import * as _ from 'lodash';
-import { DtoEnvironment } from '../../../../api/interfaces/dto_environment';
+import { DtoEnvironment } from '../../../../server/src/interfaces/dto_environment';
 import { actionCreator } from '../../action/index';
 import { Layout } from 'antd';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import Splitter from '../../components/splitter';
 import { UpdateLeftPanelType, ResizeLeftPanelType } from '../../action/ui';
 import StressRunHistoryGrid from './stress_run_history_grid';
-import { DtoRecord } from '../../../../api/interfaces/dto_record';
-import { DtoCollection } from '../../../../api/interfaces/dto_collection';
-import { StressRunResult } from '../../../../api/interfaces/dto_stress_setting';
+import { DtoRecord } from '../../../../server/src/interfaces/dto_record';
+import { DtoCollection } from '../../../../server/src/interfaces/dto_collection';
+import { StressRunResult } from '../../../../server/src/interfaces/dto_stress_setting';
 import { SaveStressType, DeleteStressType, ActiveStressType, RunStressType } from '../../action/stress';
 import StressWorkerStatus from './stress_worker_status';
 

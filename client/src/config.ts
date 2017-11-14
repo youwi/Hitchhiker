@@ -1,5 +1,5 @@
 export const env={
-  "HOST": "http://mock.wkzf:8101/api",
+  "HOST": "http://mock.wkzf:8101/api/",
   "DOMAIN":"mock.wkzf",
   "PROTOCOL":"http",
   "HOST_PORT": "mock.wkzf:8080",

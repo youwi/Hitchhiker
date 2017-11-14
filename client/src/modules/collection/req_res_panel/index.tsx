@@ -10,7 +10,7 @@ import './style/index.less';
 import { RecordState } from '../../../state/collection';
 import { actionCreator } from '../../../action/index';
 import { ActiveTabType, SaveRecordType, AddTabType, RemoveTabType } from '../../../action/record';
-import { DtoRecord } from '../../../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../../../server/src/interfaces/dto_record';
 import { State } from '../../../state/index';
 import { ResizeResHeightType } from '../../../action/ui';
 import { getReqActiveTabKeySelector, getIsResPanelMaximumSelector, getActiveRecordStateSelector, getResHeightSelector } from './selector';

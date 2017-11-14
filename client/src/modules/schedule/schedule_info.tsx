@@ -1,5 +1,5 @@
 import React from 'react';
-import { DtoSchedule } from '../../../../api/interfaces/dto_schedule';
+import { DtoSchedule } from '../../../../server/src/interfaces/dto_schedule';
 import { PeriodStr } from '../../common/period';
 import { DateUtil } from '../../utils/date_util';
 import { NotificationMode, NotificationStr } from '../../common/notification_mode';

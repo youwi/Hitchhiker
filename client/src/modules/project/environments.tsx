@@ -1,11 +1,11 @@
 import React from 'react';
 import { Table, Modal, Input, Button } from 'antd';
-import { DtoEnvironment } from '../../../../api/interfaces/dto_environment';
+import { DtoEnvironment } from '../../../../server/src/interfaces/dto_environment';
 import KeyValueComponent from '../../components/key_value';
 import { KeyValueEditType, KeyValueEditMode } from '../../common/custom_type';
-import { DtoHeader } from '../../../../api/interfaces/dto_header';
+import { DtoHeader } from '../../../../server/src/interfaces/dto_header';
 import { StringUtil } from '../../utils/string_util';
-import { DtoVariable } from '../../../../api/interfaces/dto_variable';
+import { DtoVariable } from '../../../../server/src/interfaces/dto_variable';
 import { confirmDlg } from '../../components/confirm_dialog/index';
 
 const getDefaultEnv = (projectId: string) => { return { id: StringUtil.generateUID(), name: '', variables: [], project: { id: projectId } }; };

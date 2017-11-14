@@ -1,12 +1,12 @@
 import React from 'react';
 import { Table, Tooltip } from 'antd';
-import { DtoStressRecord } from '../../../../api/interfaces/dto_stress_record';
+import { DtoStressRecord } from '../../../../server/src/interfaces/dto_stress_record';
 import * as _ from 'lodash';
-import { DtoRecord } from '../../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../../server/src/interfaces/dto_record';
 import './style/index.less';
-import { StressRunResult, StressResFailedStatistics } from '../../../../api/interfaces/dto_stress_setting';
+import { StressRunResult, StressResFailedStatistics } from '../../../../server/src/interfaces/dto_stress_setting';
 import StressRunDiagram from './stress_run_diagram';
-import { DtoStress } from '../../../../api/interfaces/dto_stress';
+import { DtoStress } from '../../../../server/src/interfaces/dto_stress';
 
 interface StressRunHistoryGridProps {
 

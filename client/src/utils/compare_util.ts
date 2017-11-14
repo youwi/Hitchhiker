@@ -1,4 +1,4 @@
-import { DtoRecord } from '../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../server/src/interfaces/dto_record';
 import { StringUtil } from './string_util';
 
 export class CompareUtil {

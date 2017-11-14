@@ -7,7 +7,7 @@ import { RequestState } from '../../state/request';
 import { actionCreator, ResetSyncMsgType } from '../../action/index';
 import { LogoutType, ChangePasswordType } from '../../action/user';
 import ChangePasswordDialog from './change_password_dialog';
-import { Password } from '../../../../api/interfaces/password';
+import { Password } from '../../../../server/src/interfaces/password';
 import { getProjectsIdNameStateSelector } from '../collection/collection_tree/selector';
 import { ImportPostmanDataType } from '../../action/collection';
 

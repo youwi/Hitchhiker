@@ -1,6 +1,6 @@
-import { DtoCollectionWithRecord } from '../../../api/interfaces/dto_collection';
-import { DtoRecord } from '../../../api/interfaces/dto_record';
-import { RunResult } from '../../../api/interfaces/dto_run_result';
+import { DtoCollectionWithRecord } from '../../../server/src/interfaces/dto_collection';
+import { DtoRecord } from '../../../server/src/interfaces/dto_record';
+import { RunResult } from '../../../server/src/interfaces/dto_run_result';
 import { StringUtil } from '../utils/string_util';
 import { RecordCategory } from '../common/record_category';
 import { requestStateDefaultValue, RequestState } from './request';

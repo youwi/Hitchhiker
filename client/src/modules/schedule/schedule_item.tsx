@@ -2,7 +2,7 @@ import React from 'react';
 import ItemWithMenu from '../../components/item_with_menu';
 import { Menu, Icon, Popover } from 'antd';
 import { confirmDlg } from '../../components/confirm_dialog/index';
-import { DtoSchedule } from '../../../../api/interfaces/dto_schedule';
+import { DtoSchedule } from '../../../../server/src/interfaces/dto_schedule';
 import './style/index.less';
 import { PeriodStr } from '../../common/period';
 import { DateUtil } from '../../utils/date_util';

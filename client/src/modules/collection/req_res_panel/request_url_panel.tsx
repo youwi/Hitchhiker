@@ -6,12 +6,12 @@ import { getActiveRecordSelector, getActiveRecordStateSelector, getActiveEnvIdSe
 import { actionCreator } from '../../../action/index';
 import { SaveRecordType, SaveAsRecordType, SendRequestType, UpdateDisplayRecordType } from '../../../action/record';
 import { State } from '../../../state/index';
-import { DtoRecord } from '../../../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../../../server/src/interfaces/dto_record';
 import { newRecordFlag, allParameter } from '../../../common/constants';
 import { StringUtil } from '../../../utils/string_util';
 import { TreeData } from 'antd/lib/tree-select/interface';
 import * as _ from 'lodash';
-import { DtoHeader } from '../../../../../api/interfaces/dto_header';
+import { DtoHeader } from '../../../../../server/src/interfaces/dto_header';
 
 const DButton = Dropdown.Button as any;
 const Option = Select.Option;

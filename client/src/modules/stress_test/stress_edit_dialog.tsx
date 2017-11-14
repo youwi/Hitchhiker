@@ -1,15 +1,15 @@
 import React from 'react';
 import { Select, Form, Modal, Input, Checkbox, Row, Col, InputNumber } from 'antd';
-import { DtoStress } from '../../../../api/interfaces/dto_stress';
+import { DtoStress } from '../../../../server/src/interfaces/dto_stress';
 import { noEnvironment } from '../../common/constants';
 import { StringUtil } from '../../utils/string_util';
 import * as _ from 'lodash';
 import { NotificationMode, NotificationStr } from '../../common/notification_mode';
-import { DtoRecord } from '../../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../../server/src/interfaces/dto_record';
 import SortableListComponent from '../../components/sortable_list';
 import { RecordCategory } from '../../common/record_category';
-import { DtoCollection } from '../../../../api/interfaces/dto_collection';
-import { DtoEnvironment } from '../../../../api/interfaces/dto_environment';
+import { DtoCollection } from '../../../../server/src/interfaces/dto_collection';
+import { DtoEnvironment } from '../../../../server/src/interfaces/dto_environment';
 import { ParameterType } from '../../common/parameter_type';
 
 const FormItem = Form.Item;

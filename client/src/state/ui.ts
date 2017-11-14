@@ -1,7 +1,7 @@
 import { SyncItem } from '../utils/request_manager';
 import { defaultLeftPanelWidth, defaultModuleKey, defaultReqTabKey, defaultResTabKey } from '../common/constants';
 import { KeyValueEditMode, KeyValueEditType } from '../common/custom_type';
-import { DtoRecord } from '../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../server/src/interfaces/dto_record';
 
 export interface AppUIState {
 

@@ -3,7 +3,7 @@ import { connect, Dispatch } from 'react-redux';
 import { Tabs, Button, Tag, Icon } from 'antd';
 import Editor from '../../../components/editor';
 import './style/index.less';
-import { RunResult } from '../../../../../api/interfaces/dto_run_result';
+import { RunResult } from '../../../../../server/src/interfaces/dto_run_result';
 import { StringUtil } from '../../../utils/string_util';
 import { nameWithTag } from '../../../components/name_with_tag';
 import { successColor, failColor, pass, fail, allParameter } from '../../../common/constants';

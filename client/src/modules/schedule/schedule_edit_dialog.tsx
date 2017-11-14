@@ -1,17 +1,17 @@
 import React from 'react';
 import { Select, Form, Modal, Input, Row, Col, Checkbox, Switch } from 'antd';
-import { DtoSchedule } from '../../../../api/interfaces/dto_schedule';
+import { DtoSchedule } from '../../../../server/src/interfaces/dto_schedule';
 import { noEnvironment } from '../../common/constants';
 import { StringUtil } from '../../utils/string_util';
 import * as _ from 'lodash';
 import { Period, PeriodStr } from '../../common/period';
 import { NotificationMode, NotificationStr } from '../../common/notification_mode';
 import { DateUtil } from '../../utils/date_util';
-import { DtoRecord } from '../../../../api/interfaces/dto_record';
+import { DtoRecord } from '../../../../server/src/interfaces/dto_record';
 import SortableListComponent from '../../components/sortable_list';
 import { RecordCategory } from '../../common/record_category';
-import { DtoCollection } from '../../../../api/interfaces/dto_collection';
-import { DtoEnvironment } from '../../../../api/interfaces/dto_environment';
+import { DtoCollection } from '../../../../server/src/interfaces/dto_collection';
+import { DtoEnvironment } from '../../../../server/src/interfaces/dto_environment';
 import { ParameterType } from '../../common/parameter_type';
 
 const FormItem = Form.Item;
