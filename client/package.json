@@ -78,9 +78,9 @@
   },
   "scripts": {
     "start-dev": "cross-env HOST=localhost:8080 node scripts/start.js",
-    "start": "node scripts/start.js",
-    "build": "node scripts/build.js",
-    "test": "node scripts/test.js --env=jsdom"
+    "start": "node build-scripts/start.js",
+    "build": "node build-scripts/build.js",
+    "test": "node build-scripts/test.js --env=jsdom"
   },
   "proxy": "http://localhost:8080",
   "jest": {
