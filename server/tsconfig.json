@@ -7,11 +7,13 @@
         "outDir": "build",
         "rootDir": "./src",
         "sourceMap": true,
-        "watch": true
+        "watch": true,
+        "allowJs": true
     },
     "exclude": [
         "./client/**/*",
         "../node_modules",
-        "./node_modules"
+        "./node_modules",
+        "./build"
     ]
 }

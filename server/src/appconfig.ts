@@ -1,4 +1,4 @@
-{
+export const config={
     "app": {
         "env": "PROD",
         "host": "http://localhost:8080/",

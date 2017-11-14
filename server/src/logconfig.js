@@ -1,4 +1,4 @@
-{
+export const config={
     "appenders": [{
             "type": "file",
             "filename": "logs/log_file.log",

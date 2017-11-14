@@ -7,7 +7,27 @@ export class Log {
     private static logger: Logger;
 
     static init() {
-        Log4js.configure(Path.join(__dirname, '../../logconfig.json'));
+   //    Log4js.configure(Path.join(__dirname, '../logconfig.js'));
+        Log4js.configure(
+        {
+            "appenders": [{
+            "type": "file",
+            "filename": "logs/log_file.log",
+            "maxLogSize": 20480000,
+            "backups": 10,
+            "category": "default"
+        },
+            {
+                "type": "console",
+                "category": "console"
+            }
+        ],
+            "levels": {
+            "relative-logger": "ALL",
+                "console": "ALL"
+        },
+            "replaceConsole": true
+        });
         Log.logger = getLogger('default');
         Log.logger.setLevel(Log4js.levels.DEBUG);
     }

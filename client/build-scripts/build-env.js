@@ -59,7 +59,7 @@ function  changeDev() {
   }
   console.log('----------local IP: '+IPv4);
   console.log('----------local host: '+hostName);
-  fs.writeFileSync('./src/env.json', JSON.stringify({ip: IPv4+':9090',httpsip:IPv4+':443',httpip:"http://"+IPv4+":9090"}), 'utf8');
+  fs.writeFileSync('./src/config.ts', JSON.stringify({ip: IPv4+':9090',httpsip:IPv4+':443',httpip:"http://"+IPv4+":9090"}), 'utf8');
 }
 
 function buildEnv(){
@@ -83,7 +83,7 @@ function buildEnv(){
           console.log("IP:"+program.server);
           console.log("PORT:"+program.port);
 
-          fs.writeFileSync('./src/env.json', JSON.stringify({ip: program.server+':'+program.port,httpsip:program.server+':443',httpip:"http://"+program.server+":"+program.port}), 'utf8');
+          fs.writeFileSync('./src/config.ts', JSON.stringify({ip: program.server+':'+program.port,httpsip:program.server+':443',httpip:"http://"+program.server+":"+program.port}), 'utf8');
           if(program.initenv)  process.exit(0);
           return true;
       }

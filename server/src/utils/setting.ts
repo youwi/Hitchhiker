@@ -9,7 +9,7 @@ export class Setting {
     static readonly instance = new Setting();
 
     private constructor() {
-        this._setting = require('../appconfig.json');
+        this._setting = require('../appconfig').config;
     }
 
     init() {

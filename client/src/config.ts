@@ -1,4 +1,4 @@
-{
+export const env={
   "HOST": "http://mock.wkzf:8101/api",
   "DOMAIN":"mock.wkzf",
   "PROTOCOL":"http",
