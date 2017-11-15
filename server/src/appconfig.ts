@@ -21,8 +21,8 @@ export const config={
         "host": "localhost",
         "port": 3306,
         "username": "root",
-        "password": "hitchhiker888",
-        "database": "hitchhiker-prod"
+        "password": "123456",
+        "database": "test"
     },
     "schedule": {
         "duration": 1800,

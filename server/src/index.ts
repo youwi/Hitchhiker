@@ -6,8 +6,11 @@ import 'reflect-metadata';
 import { WebSocketService } from './services/web_socket_service';
 import { Setting } from './utils/setting';
 import { ProjectDataService } from './services/project_data_service';
+import * as  cors from 'koa-cors'
 
 let app = new Koa();
+
+app.use(cors());
 
 Log.init();
 

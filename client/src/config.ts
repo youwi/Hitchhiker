@@ -1,5 +1,9 @@
+/**
+ * json file =>js file
+ * @type {{HOST: string; DOMAIN: string; PROTOCOL: string; HOST_PORT: string; PROTOCOL_IP_PORT: string; README: string}}
+ */
 export const env={
-  "HOST": "http://mock.wkzf:8101/api/",
+  "HOST": "http://localhost:8080/",
   "DOMAIN":"mock.wkzf",
   "PROTOCOL":"http",
   "HOST_PORT": "mock.wkzf:8080",

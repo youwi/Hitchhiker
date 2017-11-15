@@ -20,8 +20,8 @@ export class ChildProcessManager {
     private retryTimes = 0;
 
     private childModules: _.Dictionary<string> = {
-        ['schedule']: `${__dirname}/schedule_process.js`,
-        ['stress']: `${__dirname}/stress_process.js`
+        ['schedule']: `${__dirname}/schedule_process`,
+        ['stress']: `${__dirname}/stress_process`
     };
 
     init() {
@@ -57,7 +57,11 @@ export class ChildProcessManager {
 
     initStressUser(id: string, dataHandler: (data: StressResponse) => void) {
         this.stressHandlers[id] = dataHandler;
-        this.childProcesses.stress.send({ type: StressMessageType.init, id });
+        try{
+            this.childProcesses.stress.send({ type: StressMessageType.init, id });
+        }catch (e){
+            Log.info('error to send stress msg');
+        }
     }
 
     closeStressUser(id: string) {

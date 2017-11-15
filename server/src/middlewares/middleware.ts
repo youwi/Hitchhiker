@@ -25,7 +25,11 @@ export default function middleware(context: Koa) {
             }),
             sessionHandle(),
             Bodyparser(),
-            ctrlRouter.router('../build/controllers', 'api'),
+            ctrlRouter.router(Path.join(__dirname,'../controllers'), 'api'),
+            /*
+                types cript use js file!
+                this can not use ts-node
+             */
             routeFailed(),
         ]
     );

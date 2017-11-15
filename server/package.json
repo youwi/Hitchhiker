@@ -8,6 +8,7 @@
     "adm-zip": "^0.4.7",
     "koa": "^2.0.0-alpha.7",
     "koa-bodyparser": "^3.2.0",
+    "koa-cors": "0.0.16",
     "koa-multer": "^1.0.2",
     "koa-query": "^0.0.6",
     "koa-router": "^7.0.1",
@@ -19,6 +20,7 @@
     "reflect-metadata": "^0.1.8",
     "request": "^2.81.0",
     "shortid": "^2.2.6",
+    "ts-node": "^3.3.0",
     "typeorm": "0.1.0-alpha.31",
     "typescript": "^2.3.3",
     "uuid": "^3.0.1",
@@ -44,8 +46,8 @@
     "yargs": "^8.0.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build server": "tsc -p . -w false"
+    "start": "ts-node src/index.ts",
+    "build": "tsc -p . -w false"
   },
   "repository": {
     "type": "git",
