@@ -48,7 +48,7 @@
   "scripts": {
     "start": "tsc -p . -w false && node build/index.js",
     "build": "tsc -p . -w false",
-    "build-debug": "node $NODE_DEBUG_OPTION build/index.js"
+    "build-debug": "tsc -p . -w false && node $NODE_DEBUG_OPTION build/index.js"
   },
   "repository": {
     "type": "git",

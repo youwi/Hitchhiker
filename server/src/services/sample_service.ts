@@ -16,7 +16,7 @@ export class SampleService {
         if (!!SampleService.sampleCollection) {
             return;
         }
-        SampleService.sampleCollection = require('../../ExampleCollection.json');
+        SampleService.sampleCollection = require('./ExampleCollection').example;
     }
 
     static async createSampleForUser(owner: User, projectId: string) {
