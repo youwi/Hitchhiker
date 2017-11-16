@@ -23,7 +23,7 @@ export default function middleware(context: Koa) {
                     maxAge: SessionService.maxAge
                 }
             }),
-            sessionHandle(),
+          //  sessionHandle(),
             Bodyparser(),
             ctrlRouter.router(Path.join(__dirname,'../controllers'), 'api'),
             /*

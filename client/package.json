@@ -69,7 +69,7 @@
     "tslint": "^4.0.2",
     "tslint-loader": "^3.5.3",
     "tslint-react": "^2.6.0",
-    "typescript": "^2.3.3",
+    "typescript": "2.3.4",
     "url-loader": "0.5.7",
     "webpack": "1.14.0",
     "webpack-bundle-analyzer": "^2.9.0",
