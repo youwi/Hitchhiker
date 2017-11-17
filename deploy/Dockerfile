@@ -3,10 +3,12 @@
 #  this docker file is not for CI
 #
 
-FROM node:7.10
+FROM alpine
+
+RUN apk add --update nodejs
 MAINTAINER youwi-Hitchhiker youta@live.cn
 
-RUN apt-get update
+#RUN apt-get update
 
 # code folder
 RUN mkdir -p /usr/src
@@ -16,11 +18,14 @@ RUN git clone   https://github.com/youwi/Hitchhiker.git
 WORKDIR /usr/src/Hitchhiker/server
 RUN  npm install
 RUN  npm build
+RUN  npm start
+
 
 WORKDIR /usr/src/Hitchhiker/client
 RUN  npm install
 RUN  npm build
+RUN  npm http-server
 
-# start mail
 EXPOSE 8080
-CMD ["pm2-docker", "index.js"]
+
+
