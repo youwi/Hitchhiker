@@ -26,6 +26,7 @@
     "uuid": "3.0.1"
   },
   "devDependencies": {
+    "http-server": "^0.10.0",
     "@types/diff": "3.2.0",
     "@types/jest": "19.2.4",
     "@types/node": "7.0.22",
@@ -78,7 +79,9 @@
   },
   "scripts": {
     "start": "node build-scripts/start.js",
-    "build": "node build-scripts/build.js"
+    "build": "node build-scripts/build.js",
+    "http-server": "http-server build -P http://localhost:8080"
+
   },
   "proxy": "http://localhost:8080",
   "jest": {
