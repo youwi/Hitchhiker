@@ -4,16 +4,15 @@
   "description": "restful api test tool",
   "main": "index.js",
   "dependencies": {
-    "@types/uuid": "^2.0.29",
     "adm-zip": "^0.4.7",
     "koa": "^2.4.1",
     "koa-bodyparser": "^3.2.0",
-    "koa-cors": "0.0.16",
     "koa-multer": "^1.0.2",
     "koa-query": "^0.0.6",
     "koa-router": "^7.3.0",
     "koa-session-minimal": "^3.0.2",
     "koa-static": "^3.0.0",
+    "koa2-cors": "^2.0.5",
     "lodash": "^4.17.4",
     "log4js": "^1.1.1",
     "mysql": "2.13.0",
@@ -29,6 +28,7 @@
     "ws": "^3.3.1"
   },
   "devDependencies": {
+    "@types/uuid": "^2.0.29",
     "@types/koa": "^2.0.40",
     "@types/koa-static": "^2.0.22",
     "@types/lodash": "^4.14.85",
@@ -38,10 +38,6 @@
     "@types/reflect-metadata": "^0.0.5",
     "@types/shortid": "^0.0.28",
     "@types/ws": "^3.0.0",
-    "gulp": "^3.9.1",
-    "gulp-clean": "^0.3.2",
-    "gulp-replace": "^0.6.1",
-    "gulp-shell": "^0.6.3",
     "yargs": "^8.0.2"
   },
   "scripts": {

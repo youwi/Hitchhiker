@@ -40,7 +40,7 @@ export default class UserController extends BaseController {
         await UserService.deleteTempUser();
     }
 
-    @POST()
+    @POST('/user/login')
     async login(ctx: Koa.Context, @BodyParam body: DtoUser): Promise<ResObject> {
         let checkLogin = await UserService.checkUser(body.email, body.password);
         if (!checkLogin.success) {

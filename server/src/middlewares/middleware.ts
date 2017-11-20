@@ -26,6 +26,7 @@ export default function middleware(context: Koa) {
             sessionHandle(),
             Bodyparser(),
             ctrlRouter.router(Path.join(__dirname,'../controllers'), 'api'),
+            //ctrlRouter.router('controllers', 'api'),
             /*
                 types cript use js file!
                 this can not use ts-node

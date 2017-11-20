@@ -17,6 +17,11 @@ export const config={
         "scriptTimeout": 60000,
         "safeVM": false
     },
+    "corsOption":{
+        origin:()=>"http://127.0.0.1:8081",
+        credentials: true,
+        allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    },
     "db": {
         "host": "localhost",
         "port": 3306,
