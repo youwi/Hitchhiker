@@ -18,7 +18,18 @@ export const config={
         "safeVM": false
     },
     "corsOption":{
-        origin:()=>"http://127.0.0.1:8081",
+        origin:(req)=>{
+            /*
+            //use white list
+            if(req.header.host.indexOf( "127.0.0.1:8081")>-1)
+                return  "http://127.0.0.1:8081"
+            if(req.header.host.indexOf( "127.0.0.1:8080")>-1)
+                return  "http://127.0.0.1:8080"
+            if(req.header.host.indexOf( "localhost:8080")>-1)
+                return  "http://localhost:8080"
+            */
+            return req.header.origin
+        },
         credentials: true,
         allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
     },

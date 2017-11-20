@@ -17,20 +17,21 @@ export default function middleware(context: Koa) {
         [
             asyncInit(),
             errorHandle(),
-            KoaStatic(Path.join(__dirname, '../public'), { gzip: true }),
+            /**
+             *  you can serve static resource use nginx .
+             *
+             */
+            KoaStatic(Path.join(__dirname, '../../../client/build'), { gzip: true }),
             Session({
-                cookie: {
-                    maxAge: SessionService.maxAge
-                }
+                cookie: { maxAge: SessionService.maxAge }
             }),
             sessionHandle(),
             Bodyparser(),
+            /**
+               typescript use ts file!
+               this can not use ts-node
+            */
             ctrlRouter.router(Path.join(__dirname,'../controllers'), 'api'),
-            //ctrlRouter.router('controllers', 'api'),
-            /*
-                types cript use js file!
-                this can not use ts-node
-             */
             routeFailed(),
         ]
     );
