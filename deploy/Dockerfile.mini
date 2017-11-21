@@ -1,0 +1,15 @@
+#
+#  this file create a release docker IMAGE
+#  this docker file is not for CI
+#
+
+FROM alpine
+
+RUN apk add --update nodejs
+RUN apk add --update nodejs-npm
+
+MAINTAINER youwi-Hitchhiker youta@live.cn
+
+EXPOSE 8080
+
+
