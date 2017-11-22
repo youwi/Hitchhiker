@@ -60,10 +60,24 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
     private onSelectChanged = (param: SelectParam) => {
         this.props.selectTag(param.item.props.data.name);
     }
+    calcTagNameCount=(swagger)=>{
+        let newTags={}
+        Object.keys(swagger.paths).map(path=>{
+            Object.keys(swagger.paths[path]).map(method=>{
+                if(swagger.paths[path][method].tags!=null)
+                    swagger.paths[path][method].tags.map(tag=>{
+                        if( newTags[tag]==null)  newTags[tag]=0
+                        newTags[tag]++
+                    })
+            })
+        })
+        return newTags
+    }
 
 
     public render() {
         const { activeTag,swagger } = this.props;
+        const tagNameCount=this.calcTagNameCount(swagger)
         return (
             <div className="collection-panel collection-tree">
 
@@ -91,6 +105,7 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
                                 (
                                     <Menu.Item key={t.name} data={t}>
                                         {t.name}
+                                        <span className="h-badge-count">{tagNameCount[t.name]}</span>
                                     </Menu.Item>
                                 )
                             )
