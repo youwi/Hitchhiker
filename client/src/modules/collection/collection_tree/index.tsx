@@ -310,7 +310,7 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
                             </a>
                         </Dropdown>
                     </span>
-                    <Tooltip mouseEnterDelay={1} placement="bottom" title="create collection">
+                    <Tooltip mouseEnterDelay={1} placement="bottom" title="create suite">
                         <Button className="icon-btn" type="primary" icon="folder-add" onClick={this.addCollection} />
                     </Tooltip>
                 </div>

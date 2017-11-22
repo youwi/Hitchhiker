@@ -38,7 +38,7 @@ export class ProjectSelectedDialogType {
     static create: ProjectSelectedDialogMode = 'create';
 
     static getTitle(mode: ProjectSelectedDialogMode): string {
-        return ProjectSelectedDialogType.isCreateMode(mode) ? 'Create new collection' : 'Share collection';
+        return ProjectSelectedDialogType.isCreateMode(mode) ? 'Create new suite' : 'Share suite';
     }
 
     static getDescription(mode: ProjectSelectedDialogMode): string {
