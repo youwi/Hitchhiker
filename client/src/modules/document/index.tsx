@@ -11,6 +11,11 @@ import {DtoEnvironment} from "../../../../server/src/interfaces/dto_environment"
 import {DtoRecord} from "../../../../server/src/interfaces/dto_record";
 import {actionCreator} from "../../action/index";
 import {ResizeLeftPanelType, UpdateLeftPanelType} from "../../action/ui";
+import SwaggerTagList from "./swagger_tag_list";
+import {SelectedProjectChangedType,SelectedProjectTagChangedType} from "../../action/collection";
+import './swagger_style.less';
+import SwaggerPathList from "./swagger_path_list";
+
 
 interface ApiDocumentStateProps {
     collapsed: boolean;
@@ -18,25 +23,28 @@ interface ApiDocumentStateProps {
     leftPanelWidth: number;
 
     user: DtoUser;
+    projects: { id: string, name: string }[];
+
 
     activeStress: string;
 
     currentRunStressId: string;
 
-    stresses: _.Dictionary<DtoStress>;
 
     collections: _.Dictionary<DtoCollection>;
 
     environments: _.Dictionary<DtoEnvironment[]>;
 
     records: _.Dictionary<DtoRecord>;
+    tmpSwagger:any;
 
 }
 
 interface ApiDocumentDispatchProps {
     resizeLeftPanel(width: number);
-
+    selectProject(projectId: string);
     collapsedLeftPanel(collapsed: boolean);
+    selectProjectTag(projectId:string,tagName:string)
 }
 
 type ApiDocumentProps = ApiDocumentStateProps & ApiDocumentDispatchProps;
@@ -45,7 +53,7 @@ interface ApiDocumentState { }
 
 class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
     public render() {
-        const { collapsed, leftPanelWidth, collapsedLeftPanel } = this.props;
+        const { collapsed, leftPanelWidth, collapsedLeftPanel,user ,tmpSwagger} = this.props;
 
         return (
             <Layout className="main-panel">
@@ -56,13 +64,12 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
                     collapsedWidth="0.2"
                     collapsed={collapsed}
                     onCollapse={collapsedLeftPanel}>
-                    正在开发中
-
+                    <SwaggerTagList swagger={tmpSwagger} activeTag={"OK"} selectTag={()=>{}}/>
                 </Sider>
                 <Splitter resizeCollectionPanel={this.props.resizeLeftPanel} />
                 <Content>
                     <PerfectScrollbar>
-
+                        <SwaggerPathList swagger={tmpSwagger} activeTag={"OK"} selectTag={()=>{}}/>
                     </PerfectScrollbar>
                 </Content>
             </Layout>
@@ -73,17 +80,21 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
 const mapStateToProps = (state: any): ApiDocumentStateProps => {
     const { leftPanelWidth, collapsed } = state.uiState.appUIState;
     return {
-        // ...mapStateToProps
         ...state,
         leftPanelWidth,
         collapsed,
-    };
+        tmpSwagger:require("./swagger-example.json")
+     };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch<any>): ApiDocumentDispatchProps => {
     return {
         resizeLeftPanel: (width) => dispatch(actionCreator(ResizeLeftPanelType, width)),
         collapsedLeftPanel: (collapsed) => dispatch(actionCreator(UpdateLeftPanelType, collapsed)),
+        selectProject: projectId => dispatch(actionCreator(SelectedProjectChangedType, projectId)),
+        selectProjectTag: (projectId,tagName) => dispatch(actionCreator(SelectedProjectTagChangedType, {projectId,tagName})),
+
+
     };
 };
 

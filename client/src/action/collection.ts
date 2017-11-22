@@ -11,6 +11,8 @@ export const ShareCollectionType = 'share collection';
 
 export const SelectedProjectChangedType = 'select project';
 
+export const SelectedProjectTagChangedType='select project tag'
+
 export const CollectionOpenKeysType = 'open/close collection';
 
 export const ImportPostmanDataType = 'import postman data';
