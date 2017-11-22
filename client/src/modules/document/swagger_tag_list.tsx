@@ -65,19 +65,19 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
     public render() {
         const { activeTag,swagger } = this.props;
         return (
-            <div className="collection-panel">
+            <div className="collection-panel collection-tree">
 
             <div className="collection-tree-container">
             <div className="small-toolbar">
-                    <span>Project</span>
-                    <span>
-                        <Dropdown overlay={true} trigger={['click']} style={{ width: 200 }}>
-                            <a className="ant-dropdown-link" href="#">
-                                <Icon type="down" />
-                            </a>
-                        </Dropdown>
-                    </span>
-                </div>
+                <span>Project</span>
+                <span>
+                    {/*<Dropdown overlay={true} trigger={['click']} style={{ width: 200 }}>*/}
+                        {/*<a className="ant-dropdown-link" href="#">*/}
+                            {/*<Icon type="down" />*/}
+                        {/*</a>*/}
+                    {/*</Dropdown>*/}
+                </span>
+            </div>
                 <PerfectScrollbar>
                     <Menu
                         className="path-tags-list"
@@ -87,7 +87,7 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
                         onSelect={this.onSelectChanged}
                     >
                         {
-                            swagger.tags.map(t =>
+                            swagger.tags.sort((a,b)=>a.name.localeCompare(b.name)).map(t =>
                                 (
                                     <Menu.Item key={t.name} data={t}>
                                         {t.name}
@@ -97,7 +97,6 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
                         }
                     </Menu>
                 </PerfectScrollbar>
-
             </div>
             </div>
         );

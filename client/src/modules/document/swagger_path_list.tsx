@@ -66,7 +66,7 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
         const { activeTag,swagger } = this.props;
         return (
             <div className="collection-panel app-project ">
-            <div className="collection-tree-container" style={{paddingLeft: 20,paddingTop: 10}}>
+            <div className="collection-tree-container" style={{paddingLeft: 20,paddingTop: 10,paddingRight:20}}>
                 <div><span className="project-author">h</span> <span className="project-title">接口列表</span></div>
                 {
                     Object.keys(swagger.paths)
