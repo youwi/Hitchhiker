@@ -58,7 +58,8 @@ const createDefaultProject = (user: DtoUser) => {
         id: StringUtil.generateUID(),
         name: newProjectName,
         owner: user,
-        members: [user]
+        members: [user],
+        swaggerUrl:""
     };
 };
 

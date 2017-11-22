@@ -40,6 +40,9 @@ export class Project {
     @OneToOne(type => User)
     owner: User;
 
+    @Column()
+    swaggerUrl?:string;
+
     @CreateDateColumn()
     createDate: Date;
 }

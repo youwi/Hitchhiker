@@ -23,4 +23,9 @@ export interface DtoProject {
     owner: Partial<DtoUser>;
 
     createDate?: Date;
+
+    /**
+        for api doc
+    **/
+    swaggerUrl?:string;
 }
