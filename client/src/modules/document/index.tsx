@@ -49,11 +49,20 @@ interface ApiDocumentDispatchProps {
 
 type ApiDocumentProps = ApiDocumentStateProps & ApiDocumentDispatchProps;
 
-interface ApiDocumentState { }
+interface ApiDocumentState {
+    activeTag:string
+}
 
 class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
+    constructor(props){
+        super(props)
+        this.state={
+            activeTag:""
+        }
+    }
     public render() {
         const { collapsed, leftPanelWidth, collapsedLeftPanel,user ,tmpSwagger} = this.props;
+
 
         return (
             <Layout className="main-panel">
@@ -64,12 +73,12 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
                     collapsedWidth="0.2"
                     collapsed={collapsed}
                     onCollapse={collapsedLeftPanel}>
-                    <SwaggerTagList swagger={tmpSwagger} activeTag={"OK"} selectTag={()=>{}}/>
+                    <SwaggerTagList swagger={tmpSwagger}  activeTag={this.state.activeTag||""} selectTag={(activeTag)=>{this.setState({activeTag})}}/>
                 </Sider>
                 <Splitter resizeCollectionPanel={this.props.resizeLeftPanel} />
                 <Content>
                     <PerfectScrollbar>
-                        <SwaggerPathList swagger={tmpSwagger} activeTag={"OK"} selectTag={()=>{}}/>
+                        <SwaggerPathList swagger={tmpSwagger} activeTag={this.state.activeTag||""} selectTag={()=>{}}/>
                     </PerfectScrollbar>
                 </Content>
             </Layout>

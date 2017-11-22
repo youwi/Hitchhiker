@@ -58,7 +58,7 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
     }
 
     private onSelectChanged = (param: SelectParam) => {
-        this.props.selectTag(param.item.props.data.id);
+        this.props.selectTag(param.item.props.data.name);
     }
 
 

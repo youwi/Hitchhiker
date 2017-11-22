@@ -71,7 +71,13 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                 {
                     Object.keys(swagger.paths)
                     .map(path =>
-                       Object.keys( swagger.paths[path] ).map(method=>
+                       Object.keys( swagger.paths[path] ).filter((method)=>{
+                           if(activeTag=="")
+                                return true;
+                           if(swagger.paths[path][method].tags)
+                               return swagger.paths[path][method].tags.indexOf(activeTag)>-1;
+                           return false
+                       }).map(method=>
                            (<li className="path-li path-li-post" key={method+path}>
                                    <div className="path-head">
                                        <span className="path-method">{method}</span>
