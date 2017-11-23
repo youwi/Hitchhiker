@@ -9,6 +9,7 @@ export const ResizeResHeightType = 'resize res panel height';
 export const ResizeLeftPanelType = 'resize left panel';
 
 export const UpdateLeftPanelType = 'collapse left panel';
+export const UpdateLeftMenuType = 'collapse left menu';
 
 export const SwitchHeadersEditModeType = 'switch headers edit mode';
 

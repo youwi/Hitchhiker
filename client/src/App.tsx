@@ -27,6 +27,7 @@ interface AppStateProps {
   activeModule: string;
 
   collapsed: boolean;
+  collapsedMenu: boolean;
 
   isFetchDataSuccess: boolean;
 }
@@ -93,7 +94,7 @@ class App extends React.Component<AppProps, AppState> {
           <HeaderPanel />
         </Header>
         <Layout>
-          <Sider className="app-slider" style={{ maxWidth: toolBarWidth }}>
+          <Sider className="app-slider" style={{ maxWidth: toolBarWidth,display:!this.props.collapsedMenu?"none":"" }}>
             <Menu
               className="sider-menu"
               mode="vertical"
@@ -145,13 +146,14 @@ class App extends React.Component<AppProps, AppState> {
 }
 
 const mapStateToProps = (state: State): AppStateProps => {
-  const { collapsed, activeModule } = state.uiState.appUIState;
+  const { collapsed, activeModule,collapsedMenu } = state.uiState.appUIState;
   const isFetchDataSuccess = state.userState.loginState.status !== RequestStatus.failed &&
     state.localDataState.fetchLocalDataState.status === RequestStatus.success;
   return {
     collapsed,
     activeModule,
-    isFetchDataSuccess
+    isFetchDataSuccess,
+     collapsedMenu
   };
 };
 

@@ -10,6 +10,8 @@ export interface AppUIState {
     leftPanelWidth: number;
 
     collapsed: boolean;
+
+    collapsedMenu:boolean
 }
 
 export interface SyncState {
@@ -55,7 +57,8 @@ export interface UIState {
 export const appUIDefaultValue: AppUIState = {
     activeModule: defaultModuleKey,
     leftPanelWidth: defaultLeftPanelWidth,
-    collapsed: false
+    collapsed: false,
+    collapsedMenu:false,
 };
 
 export const reqResUIDefaultValue: ReqResUIState = {

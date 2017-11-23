@@ -1,7 +1,7 @@
 import { EditEnvType } from '../action/project';
 import { UIState, AppUIState, appUIDefaultValue, ReqResUIState, uiDefaultValue, SyncState, syncDefaultValue, TimelineState, timelineDefaultValue } from '../state/ui';
 import { combineReducers } from 'redux';
-import { ResizeLeftPanelType, UpdateLeftPanelType, SelectReqTabType, SelectResTabType, ToggleReqPanelVisibleType, ResizeResHeightType, SwitchHeadersEditModeType, CloseTimelineType } from '../action/ui';
+import {ResizeLeftPanelType, UpdateLeftPanelType, SelectReqTabType, SelectResTabType, ToggleReqPanelVisibleType, ResizeResHeightType, SwitchHeadersEditModeType, CloseTimelineType, UpdateLeftMenuType} from '../action/ui';
 import { SyncType, SyncSuccessType, SyncRetryType, ResetSyncMsgType, SyncFailedType } from '../action/index';
 import { RemoveTabType, SaveRecordType } from '../action/record';
 import * as _ from 'lodash';
@@ -22,6 +22,9 @@ function appUIState(state: AppUIState = appUIDefaultValue, action: any): AppUISt
         }
         case UpdateLeftPanelType: {
             return { ...state, collapsed: action.value.collapsed, activeModule: action.value.activeModule };
+        }
+        case UpdateLeftMenuType:{
+            return { ...state, collapsedMenu:!state.collapsedMenu};
         }
         case EditEnvType: {
             return { ...state, activeModule: 'project' };

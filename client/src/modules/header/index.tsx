@@ -10,6 +10,7 @@ import ChangePasswordDialog from './change_password_dialog';
 import { Password } from '../../../../server/src/interfaces/password';
 import { getProjectsIdNameStateSelector } from '../collection/collection_tree/selector';
 import { ImportPostmanDataType } from '../../action/collection';
+import {UpdateLeftMenuType} from "../../action/ui";
 
 const Dragger = Upload.Dragger;
 
@@ -37,6 +38,8 @@ interface HeaderPanelDispatchProps {
     importPostman(projectId: string, data: any);
 
     resetSyncMsg();
+
+    toggleLeftMenu();
 }
 
 type HeaderPanelProps = HeaderPanelStateProps & HeaderPanelDispatchProps;
@@ -128,13 +131,14 @@ class HeaderPanel extends React.Component<HeaderPanelProps, HeaderPanelState> {
         </Menu>
     );
 
+
     public render() {
         const { syncCount, userName, changePasswordState } = this.props;
 
         return (
             <div className="header">
-                <img className="header-logo" src="./hitchhiker.svg" />
-                <img className="header-title" src="./hitchhiker-title.svg" />
+                <img className="header-logo" src="./hitchhiker.svg" onClick={this.props.toggleLeftMenu}/>
+                {/*<img className="header-title" src="./hitchhiker-title.svg" />*/}
                 <div className="header-right">
                     <Badge style={{ fontFamily: 'SourceCodePro', boxShadow: '0 0 0 0 #fff' }} count={syncCount}>
                         <Icon className={`${syncCount > 0 ? 'header-sync-anim' : ''} header-sync`} type="sync" />
@@ -219,7 +223,8 @@ const mapDispatchToProps = (dispatch: Dispatch<HeaderPanelProps>): HeaderPanelDi
         logout: (userId, needClearCache) => dispatch(actionCreator(LogoutType, { userId, needClearCache })),
         onChangePassword: (password) => dispatch(actionCreator(ChangePasswordType, password)),
         importPostman: (projectId, data) => dispatch(actionCreator(ImportPostmanDataType, { projectId, data })),
-        resetSyncMsg: () => dispatch(actionCreator(ResetSyncMsgType))
+        resetSyncMsg: () => dispatch(actionCreator(ResetSyncMsgType)),
+        toggleLeftMenu:()=>dispatch(actionCreator(UpdateLeftMenuType))
     };
 };
 
