@@ -77,4 +77,7 @@ export class Message {
     static tokenInvalid: string = 'token is invalid';
 
     static importPostmanSuccess: string = 'import postman data success';
+
+    static swaggerNotFound: string = 'swagger.json not cached in db,you may init it';
+
 }    

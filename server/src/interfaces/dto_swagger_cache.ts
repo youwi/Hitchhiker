@@ -4,7 +4,9 @@ export interface  DtoSwaggerCache {
 
      id: string;
 
-     key: string;
+    projectId: string;
+
+    key: string;
 
      url: string;
 

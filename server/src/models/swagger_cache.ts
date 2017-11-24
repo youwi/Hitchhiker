@@ -7,6 +7,9 @@ export class SwaggerCache {
     @PrimaryColumn()
     id: string;
 
+    @Column()
+    projectId: string;
+
     @Column({ nullable: true })
     key: string;
 

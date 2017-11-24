@@ -1,4 +1,6 @@
-import { POST, GET,PUT, DELETE, BodyParam, PathParam, BaseController,Param } from 'webapi-router';
+
+
+import { POST, GET,PUT, DELETE, BodyParam, PathParam, BaseController } from 'webapi-router';
 import { ResObject } from '../common/res_object';
 import * as Koa from 'koa';
 import { RecordService } from '../services/record_service';
@@ -15,7 +17,7 @@ export default class SwaggerController extends BaseController {
     }
     @GET('/swagger/:id')
     async get(ctx: Koa.Context,@PathParam('id') id: string){
-        const user = SessionService.getUser(ctx);
+        console.log("--/swagger/:id-")
         return await SwaggerService.getLast(id);
     }
 
@@ -34,13 +36,12 @@ export default class SwaggerController extends BaseController {
     @POST('/swagger/history/:historyId')
     async history(ctx: Koa.Context, @PathParam('historyId') historyId: string,@BodyParam data: DtoSwaggerCache) {
         const record = SwaggerService.fromDto(data);
-        const userId = SessionService.getUserId(ctx);
         return await SwaggerService.getByHistory(record,historyId);
     }
 
     @GET('/swagger/init')
-    async buildRemote(ctx: Koa.Context, @Param url: string) {
-        let data={id:null,key:null,url:url,content:null,version:null,createDate:null,updateDate:null};
+    async buildRemote(ctx: Koa.Context, url: string) {
+        let data={id:null,key:null,projectId:null,url:url,content:null,version:null,createDate:null,updateDate:null};
         return await SwaggerService.initByUrl(data);
     }
 

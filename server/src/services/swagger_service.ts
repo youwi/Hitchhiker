@@ -43,10 +43,9 @@ export class SwaggerService {
 
         const cache = await connection.getRepository(SwaggerCache)
             .createQueryBuilder('swagger_cache')
-            .where(`id = :id`)
-            .setParameter('id', id)
+            .where(`swagger_cache.project_id = :id`,{id})
             .getOne();
-        return cache
+        return cache|| { success: false, message: Message.swaggerNotFound };
     }
 
     static getByHistory(record: SwaggerCache, historyId: string) {
