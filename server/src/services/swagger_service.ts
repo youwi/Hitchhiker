@@ -7,6 +7,8 @@ import {Message} from "../common/message";
 import {DtoSwaggerCache} from "../interfaces/dto_swagger_cache";
 import {DtoUser} from "../interfaces/dto_user";
 import {User} from "../models/user";
+import {Log} from "../utils/log";
+import * as request from 'request';
 
 export class SwaggerService {
 
@@ -41,7 +43,7 @@ export class SwaggerService {
 
         const cache = await connection.getRepository(SwaggerCache)
             .createQueryBuilder('swagger_cache')
-            .where(`user.id = :id`)
+            .where(`id = :id`)
             .setParameter('id', id)
             .getOne();
         return cache
@@ -52,7 +54,24 @@ export class SwaggerService {
     }
 
     static initByUrl(record: SwaggerCache) {
-        
+        record.id = record.id || StringUtil.generateUID();
+        request(record.url).then((body)=>{
+            record.content=body
+            SwaggerService.save(record,null);
+        })
+    }
+
+    private static request(option: request.Options): Promise<any> {
+        return new Promise<{ err: any, response: request.RequestResponse, body: any }>((resolve, reject) => {
+            request(option, (err, response, body) => {
+                resolve({ err, response, body });
+                if (err) {
+                    Log.error(err);
+                } else {
+                    Log.info(body);
+                }
+            });
+        });
     }
 
     static refreshByUrlOrId(record: SwaggerCache, user: User) {

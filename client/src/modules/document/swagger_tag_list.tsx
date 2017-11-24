@@ -16,7 +16,11 @@ import {Dropdown,Icon} from "antd"
 interface SwaggerListProps {
     swagger:any;
     activeTag:any;
+    projects:{ id: string, name: string,swaggerUrl:string }[];
+    project:{ id: string, name: string,swaggerUrl:string };
     selectTag(tagName:string);
+    refreshSwagger();
+    selectProject(id:string);
 }
 
 interface SwaggerListState {
@@ -73,8 +77,19 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
         })
         return newTags
     }
+    refreshSwagger=(e)=>{
+        this.props.refreshSwagger()
 
+    }
+    private getProjectMenu = () => {
+        const projects = this.props.projects||[];
 
+        return (
+            <Menu style={{ minWidth: 150 }} onClick={e => this.props.selectProject(e.key)} selectedKeys={[this.props.project.id]}>
+                {projects.map(t => <Menu.Item key={t.id}>{t.name}</Menu.Item>)}
+            </Menu>
+        );
+    }
     public render() {
         const { activeTag,swagger } = this.props;
         const tagNameCount=this.calcTagNameCount(swagger)
@@ -85,11 +100,13 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
             <div className="small-toolbar">
                 <span>Project</span>
                 <span>
-                    {/*<Dropdown overlay={true} trigger={['click']} style={{ width: 200 }}>*/}
-                        {/*<a className="ant-dropdown-link" href="#">*/}
-                            {/*<Icon type="down" />*/}
-                        {/*</a>*/}
-                    {/*</Dropdown>*/}
+                    <Dropdown overlay={this.getProjectMenu()} trigger={['click']} style={{ width: 200 }}>
+                        <a className="ant-dropdown-link" href="#">
+                            {this.props.project.name}
+                            <Icon type="down" />
+                        </a>
+                    </Dropdown>
+                    <Icon type="sync" onClick={this.refreshSwagger}/>
                 </span>
             </div>
                 <PerfectScrollbar>

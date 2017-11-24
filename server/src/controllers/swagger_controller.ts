@@ -39,10 +39,9 @@ export default class SwaggerController extends BaseController {
     }
 
     @GET('/swagger/init')
-    async buildRemote(ctx: Koa.Context, @BodyParam data: DtoSwaggerCache) {
-        const record = SwaggerService.fromDto(data);
-        const userId = SessionService.getUserId(ctx);
-        return await SwaggerService.initByUrl(record);
+    async buildRemote(ctx: Koa.Context, @Param url: string) {
+        let data={id:null,key:null,url:url,content:null,version:null,createDate:null,updateDate:null};
+        return await SwaggerService.initByUrl(data);
     }
 
 

@@ -9,6 +9,7 @@ import { storeLocalData, fetchLocalData } from './local_data';
 import { deleteSchedule, saveSchedule, runSchedule } from './schedule';
 import { saveStress, deleteStress, runStress } from './stress';
 import { GlobalVar } from '../utils/global_var';
+import {changeSwagger,initSwaggerNow} from "./swagger"
 
 export const SyncType = 'sync';
 
@@ -66,6 +67,8 @@ export function* rootSaga() {
         spawn(deleteStress),
         spawn(runStress),
         spawn(syncUserData),
+        spawn(initSwaggerNow),
+        spawn(changeSwagger),
         spawn(sync)
     ];
 };
