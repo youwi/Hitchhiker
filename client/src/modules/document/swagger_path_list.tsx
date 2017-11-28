@@ -28,8 +28,8 @@ interface SwaggerListProps {
 
 interface SwaggerListState {
     searchText:string;
-    multiTags:string[]
-
+    multiTags:string[];
+    toggleState:any;
 }
 
 const createDefaultStress: (user: DtoUser) => DtoStress = (user: DtoUser) => {
@@ -57,13 +57,15 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
         super(props);
         this.state = {
             searchText:"",
-            multiTags:[]
+            multiTags:[],
+            toggleState:{}
         };
     }
 
-    public shouldComponentUpdate(nextProps: SwaggerListProps, nextState: SwaggerListState) {
-        return !_.isEqual(nextProps, this.props) || !_.isEqual(nextState, this.state);
-    }
+    // public shouldComponentUpdate(nextProps: SwaggerListProps, nextState: SwaggerListState) {
+    //     return !_.isEqual(nextProps, this.props) || !_.isEqual(nextState, this.state);
+    //
+    // }
 
     private onSelectChanged = (param: SelectParam) => {
         this.props.selectTag(param.item.props.data.id);
@@ -103,9 +105,21 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
         return count
     }
 
+    toggleDetail=(methodPath)=>{
+        let {toggleState}= this.state
+        if(toggleState[methodPath]==false || toggleState[methodPath]==null)
+            toggleState[methodPath]=true
+        else{
+            toggleState[methodPath]=false
+        }
+        this.setState({toggleState})
+    }
+
 
     public render() {
         const {activeTag, swagger} = this.props;
+
+
         let totalCount=0;
         Object.keys(swagger.paths).map(path=>{
             Object.keys(swagger.paths[path]).map(method=>{
@@ -156,15 +170,30 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
 
                                     return false;
                                 }).map(method =>
-                                    (<li className="path-li path-li-post" key={method + path}>
+                                    (<li className="path-li path-li-post" key={method + path} onClick={(e)=>this.toggleDetail(method+path)}>
                                             <div className="path-head">
                                                 <span className="path-method">{method}</span>
                                                 <span className="path-name">{path}</span>
                                                 <span className="path-description text-ellipsis">{swagger.paths[path][method].summary}</span>
                                                 <span className="middle-right">
-                                           {swagger.paths[path][method].tags == null ? null : swagger.paths[path][method].tags.map((tag) => <span key={method + path + tag} className="h-tag">{tag}</span>)}
-                                       </span>
+                                                    {swagger.paths[path][method].tags == null ? null : swagger.paths[path][method].tags.map((tag) => <span key={method + path + tag} className="h-tag">{tag}</span>)}
+                                                </span>
                                             </div>
+                                            {
+                                                this.state.toggleState[method+path]?(<div className="path-info path-info-show" >
+                                                    <div>
+                                                        <pre></pre> <h3>Parameters</h3> <p><span>content-type:application/json</span></p>
+                                                        <h3>Responses</h3> <p><span>content-type:application/json;wrapper=higgs</span></p>
+                                                        <h4>Body</h4> <div className="path-info-body"><div className="param-container">  <span className="param-ref">
+                                                    <span className="link">VAccount</span>
+                                                    <i className="h-icon-link link"></i></span>
+                                                        <span className="param-view-prefix"></span>
+                                                        <span className="param-description"></span>
+                                                    </div></div>
+                                                    </div>
+                                                </div>):null
+                                            }
+
                                         </li>
                                     )
                                 )
