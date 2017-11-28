@@ -47,8 +47,10 @@ export function projectState(state: ProjectState = projectDefaultValue, action: 
             return {...state}
         }
         case SelectedProjectChangedGotSwaggerType:{
-            console.log("SelectedProjectChangedGotSwaggerType")
-            return {...state,currentSwagger:JSON.parse(action.value.swagger.content)}
+            if(action.value.swagger!=null)
+                return {...state,currentSwagger:JSON.parse(action.value.swagger.content)}
+            else
+                return {... state,currentSwagger:{paths:[],tags:[]}}
         }
         case SaveLocalhostMappingType: {
             const { isNew, id, projectId, userId, ip } = action.value;

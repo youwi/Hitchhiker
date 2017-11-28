@@ -117,7 +117,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
 
 const mapStateToProps = (state: any): ApiDocumentStateProps => {
     const { leftPanelWidth, collapsed } = state.uiState.appUIState;
-    const {projects}=state.projectState;
+    const {projects,currentSwagger}=state.projectState;
     const {selectedProject } = state.collectionState;
     let arr;
     if(projects.constructor==Object){
@@ -133,7 +133,7 @@ const mapStateToProps = (state: any): ApiDocumentStateProps => {
         leftPanelWidth,
         projects:arr,
         collapsed,
-        tmpSwagger:require("./swagger-example.json")
+        tmpSwagger:currentSwagger||require("./swagger-example.json")
      };
 };
 

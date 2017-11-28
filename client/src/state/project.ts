@@ -21,5 +21,5 @@ export const projectDefaultValue: ProjectState = {
         projectJS: {},
         projectData: {}
     },
-    currentSwagger:{}
+    currentSwagger:{paths:[],tags:[]}
 };
