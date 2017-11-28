@@ -18,6 +18,7 @@ import { localhost } from '../../common/constants';
 import { StringUtil } from '../../utils/string_util';
 import { ProjectFileType } from '../../common/custom_type';
 import { ProjectFiles } from '../../../../server/src/interfaces/dto_project_data';
+import { Table, Modal, Input, Icon } from 'antd';
 
 const { Content, Sider } = Layout;
 
@@ -120,6 +121,25 @@ class Project extends React.Component<ProjectProps, ProjectState> {
         const env = this.props.environments[this.props.activeProject];
         return _.sortBy(env, e => e.name);
     }
+    getCurrentProjectSwaggerUrl=()=>{
+         let obj=this.props.projects.find(t => t.id === this.props.activeProject)
+         if(obj!=null) return obj.swaggerUrl;
+         else return ""
+    }
+    changeSwaggerUrl=(ev)=>{
+        let project=   this.getSelectedProject()
+        let v=""
+        if(ev.constructor==String){
+            v=ev
+        }else if(ev.target.value!=null){
+            v=ev.target.value
+        }
+        if(project!=null){
+            project.swaggerUrl=v
+            this.props.updateProject(project)
+        }
+    }
+
 
     public render() {
         const project = this.getSelectedProject();
@@ -177,6 +197,11 @@ class Project extends React.Component<ProjectProps, ProjectState> {
                         editEnvCompleted={editEnvCompleted}
                         editEnv={editEnv}
                     />
+                    <div>
+                        <div style={{height: 12}}></div>
+                        <div className="project-title">Swagger URL</div>
+                        <Input style={{width:'100%'}} addonAfter={<Icon type="check" />} value={this.getCurrentProjectSwaggerUrl()} onChange={this.changeSwaggerUrl}/>
+                    </div>
                 </Content>
             </Layout>
         );

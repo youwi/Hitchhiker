@@ -20,6 +20,7 @@ import { newCollectionName, allProject } from '../../../common/constants';
 import RecordTimeline from '../../../components/record_timeline';
 import './style/index.less';
 import { ShowTimelineType, CloseTimelineType } from '../../../action/ui';
+import {SelectedProjectChangedSwaggerType} from "../../../action/swagger";
 
 const SubMenu = Menu.SubMenu;
 const MenuItem = Menu.Item;
@@ -407,7 +408,10 @@ const mapDispatchToProps = (dispatch: Dispatch<{}>): CollectionListDispatchProps
         createRecord: (record) => dispatch(actionCreator(SaveAsRecordType, { isNew: true, record })),
         moveRecord: record => dispatch(actionCreator(MoveRecordType, { record })),
         openKeysChanged: openKeys => dispatch(actionCreator(CollectionOpenKeysType, openKeys)),
-        selectProject: projectId => dispatch(actionCreator(SelectedProjectChangedType, projectId)),
+        selectProject: projectId =>{
+            dispatch(actionCreator(SelectedProjectChangedType, projectId))
+            dispatch(actionCreator(SelectedProjectChangedSwaggerType, projectId))
+        },
         showTimeLine: id => dispatch(actionCreator(ShowTimelineType, id)),
         closeTimeLine: () => dispatch(actionCreator(CloseTimelineType))
     };

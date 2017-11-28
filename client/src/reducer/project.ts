@@ -47,8 +47,13 @@ export function projectState(state: ProjectState = projectDefaultValue, action: 
             return {...state}
         }
         case SelectedProjectChangedGotSwaggerType:{
-            if(action.value.swagger!=null)
-                return {...state,currentSwagger:JSON.parse(action.value.swagger.content)}
+            if(action.value.swagger!=null){
+                if(action.value.swagger.swagger!=null){
+                    return  {...state,currentSwagger:action.value.swagger}
+                }else{
+                    return {...state,currentSwagger:JSON.parse(action.value.swagger.content)}
+                }
+            }
             else
                 return {... state,currentSwagger:{paths:[],tags:[]}}
         }

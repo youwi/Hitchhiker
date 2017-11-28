@@ -82,19 +82,44 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
             this.setState({searchText:value.target.value})
         }
     }
+    calcFilterCount=()=>{
+        let count=0
+        const {activeTag, swagger} = this.props;
+        let filteredPaths= Object.keys(swagger.paths)
+            .map(path =>
+                Object.keys(swagger.paths[path]).filter((method) => {
+                    if (activeTag == "")
+                        return true;
+                    if (swagger.paths[path][method].tags)
+                        return swagger.paths[path][method].tags.indexOf(activeTag) > -1;
+                    return false
+                }).filter((method)=>{
+                    if(this.state.searchText=="" ||this.state.searchText==null) return true;
+                    if(path.indexOf(this.state.searchText)>-1) return true;
+                    if(swagger.paths[path][method].summary && swagger.paths[path][method].summary.indexOf(this.state.searchText)>-1) return true
+                    if(swagger.paths[path][method].description && swagger.paths[path][method].description.indexOf(this.state.searchText)>-1) return true
+                    return false;
+                }).map(()=>count++))
+        return count
+    }
 
 
     public render() {
         const {activeTag, swagger} = this.props;
+        let totalCount=0;
+        Object.keys(swagger.paths).map(path=>{
+            Object.keys(swagger.paths[path]).map(method=>{
+                totalCount++
+            })
+        })
+
         return (
             <div className="collection-panel app-project ">
                 <div className="collection-tree-container" style={{paddingLeft: 20, paddingTop: 10, paddingRight: 20}}>
                     <div>
-
-
                         <Row gutter={24}>
                             <Col span={6}><span className="project-author">A</span>
-                                <span className="project-title">接口列表</span></Col>
+                                <span className="project-title">接口列表({this.calcFilterCount()})</span></Col>
                             <Col span={6} offset={6}>
                                 <Select
                                     mode="multiple"
@@ -126,6 +151,9 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                 }).filter((method)=>{
                                     if(this.state.searchText=="" ||this.state.searchText==null) return true;
                                     if(path.indexOf(this.state.searchText)>-1) return true;
+                                    if(swagger.paths[path][method].summary && swagger.paths[path][method].summary.indexOf(this.state.searchText)>-1) return true
+                                    if(swagger.paths[path][method].description && swagger.paths[path][method].description.indexOf(this.state.searchText)>-1) return true
+
                                     return false;
                                 }).map(method =>
                                     (<li className="path-li path-li-post" key={method + path}>

@@ -13,11 +13,12 @@ export const SelectedProjectChangedGotSwaggerType="select project then swagger n
 export function* initSwaggerNow() {
     yield takeEvery(InitUpdateSwagger, function* (action: any) {
         const { url } = action.value;
-        const channelAction = syncAction({ type: InitUpdateSwagger, method: HttpMethod.GET, url: Urls.getUrl(`swagger/init?url=${url}`)});
-        yield put(channelAction);
+        let swagger=yield call(RequestManager.get,Urls.getUrl(`swagger/init?url=${url}`));
+        let runResult: any = {};
+        runResult=yield swagger.json()
+        yield put(actionCreator(SelectedProjectChangedGotSwaggerType, { swagger:runResult }));
     });
 }
-
 
 export function* changeSwagger() {
     yield takeEvery(SelectedProjectChangedSwaggerType, function* (action: any) {

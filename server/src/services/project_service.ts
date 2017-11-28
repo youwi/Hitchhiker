@@ -108,7 +108,7 @@ export class ProjectService {
         await connection.getRepository(Project)
             .createQueryBuilder('project')
             .where('id=:id', { id: dtoProject.id })
-            .update({ name: dtoProject.name, note: dtoProject.note })
+            .update({ name: dtoProject.name, note: dtoProject.note,swaggerUrl:dtoProject.swaggerUrl })
             .execute();
 
         return { success: true, message: Message.projectSaveSuccess };
