@@ -8,6 +8,8 @@ export interface ProjectState {
     activeProject: string;
 
     projectFiles: ProjectFiles;
+
+    currentSwagger:any;
 }
 
 export const projectDefaultValue: ProjectState = {
@@ -18,5 +20,6 @@ export const projectDefaultValue: ProjectState = {
         globalData: {},
         projectJS: {},
         projectData: {}
-    }
+    },
+    currentSwagger:{}
 };

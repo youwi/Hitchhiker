@@ -3,6 +3,7 @@ import { LoginSuccessType, SyncUserDataSuccessType } from '../action/user';
 import * as _ from 'lodash';
 import { ProjectState, projectDefaultValue } from '../state/project';
 import { ProjectFileTypes } from '../common/custom_type';
+import {SelectedProjectChangedGotSwaggerType, SelectedProjectChangedSwaggerType} from "../action/swagger";
 
 export function projectState(state: ProjectState = projectDefaultValue, action: any): ProjectState {
     switch (action.type) {
@@ -41,6 +42,13 @@ export function projectState(state: ProjectState = projectDefaultValue, action: 
                     [projectId]: { ...state.projects[projectId], members }
                 }
             };
+        }
+        case SelectedProjectChangedSwaggerType:{
+            return {...state}
+        }
+        case SelectedProjectChangedGotSwaggerType:{
+            console.log("SelectedProjectChangedGotSwaggerType")
+            return {...state,currentSwagger:JSON.parse(action.value.swagger.content)}
         }
         case SaveLocalhostMappingType: {
             const { isNew, id, projectId, userId, ip } = action.value;

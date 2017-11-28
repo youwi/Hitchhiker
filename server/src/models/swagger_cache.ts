@@ -16,7 +16,7 @@ export class SwaggerCache {
     @Column({ nullable: true })
     url: string;
 
-    @Column({ nullable: true })
+    @Column('mediumtext', { nullable: true })
     content: string;
 
     @Column({ nullable: true })

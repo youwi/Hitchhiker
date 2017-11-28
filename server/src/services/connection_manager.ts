@@ -20,6 +20,7 @@ export class ConnectionManager {
             logSchemaCreation: true,
             logFailedQueryError: true,
         },
+        charset:"utf8mb4",
         autoSchemaSync: true,
         entities: [__dirname + '/../models/{*.ts,*.js}'],
     };

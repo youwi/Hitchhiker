@@ -31,3 +31,11 @@ Hitchhiker Api is a Restful Api integrated testing tool that support Schedule, R
     npm run build
     npm run start
     cd ..
+    
+## build base on 
+    es6
+    typescript
+    react
+    redux
+    redux-saga
+    

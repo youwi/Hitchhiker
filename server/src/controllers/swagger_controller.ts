@@ -1,6 +1,6 @@
 
 
-import { POST, GET,PUT, DELETE, BodyParam, PathParam, BaseController } from 'webapi-router';
+import { POST, GET,PUT, DELETE, BodyParam, PathParam, BaseController,QueryParam } from 'webapi-router';
 import { ResObject } from '../common/res_object';
 import * as Koa from 'koa';
 import { RecordService } from '../services/record_service';
@@ -10,20 +10,10 @@ import {SwaggerService} from "../services/swagger_service";
 
 export default class SwaggerController extends BaseController {
 
-    @POST('/swagger/:id')
-    async createOrUpdate(ctx: Koa.Context, @BodyParam sc: DtoSwaggerCache): Promise<ResObject> {
-        const user = SessionService.getUser(ctx);
-        return await SwaggerService.save(SwaggerService.fromDto(sc), user);
-    }
-    @GET('/swagger/:id')
-    async get(ctx: Koa.Context,@PathParam('id') id: string){
-        console.log("--/swagger/:id-")
-        return await SwaggerService.getLast(id);
-    }
-
-    @DELETE('/swagger/:id')
-    async delete( @PathParam('id') id: string): Promise<ResObject> {
-        return await RecordService.delete(id);
+    @GET('/swagger/init')
+    async buildRemote(ctx: Koa.Context, @QueryParam("url") url: string) {
+        let data={id:null,key:null,projectId:null,url:url,content:null,version:null,createDate:null,updateDate:null};
+        return await SwaggerService.initByUrl(data);
     }
 
     @POST('/swagger/refresh')
@@ -33,16 +23,27 @@ export default class SwaggerController extends BaseController {
         return await SwaggerService.refreshByUrlOrId(record, user);
     }
 
+    @POST('/swagger/:id')
+    async createOrUpdate(ctx: Koa.Context, @BodyParam sc: DtoSwaggerCache): Promise<ResObject> {
+        const user = SessionService.getUser(ctx);
+        return await SwaggerService.save(SwaggerService.fromDto(sc), user);
+    }
+    @GET('/swagger/:id')
+    async get(ctx: Koa.Context,@PathParam('id') id: string){
+        return await SwaggerService.getLast(id);
+    }
+
+    @DELETE('/swagger/:id')
+    async delete( @PathParam('id') id: string): Promise<ResObject> {
+        return await RecordService.delete(id);
+    }
+
+
+
     @POST('/swagger/history/:historyId')
     async history(ctx: Koa.Context, @PathParam('historyId') historyId: string,@BodyParam data: DtoSwaggerCache) {
         const record = SwaggerService.fromDto(data);
         return await SwaggerService.getByHistory(record,historyId);
-    }
-
-    @GET('/swagger/init')
-    async buildRemote(ctx: Koa.Context, url: string) {
-        let data={id:null,key:null,projectId:null,url:url,content:null,version:null,createDate:null,updateDate:null};
-        return await SwaggerService.initByUrl(data);
     }
 
 

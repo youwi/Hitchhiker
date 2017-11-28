@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "adm-zip": "^0.4.7",
+    "isomorphic-fetch": "^2.2.1",
     "koa": "^2.4.1",
     "koa-bodyparser": "^3.2.0",
     "koa-multer": "^1.0.2",
@@ -16,6 +17,7 @@
     "lodash": "^4.17.4",
     "log4js": "^1.1.1",
     "mysql": "2.13.0",
+    "node-fetch": "^1.7.3",
     "reflect-metadata": "^0.1.8",
     "request": "^2.81.0",
     "shortid": "^2.2.6",

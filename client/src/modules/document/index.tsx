@@ -65,6 +65,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
     }
     refreshSwagger=()=>{
       //  this.props.refreshSwagger(project.swaggerUrl)
+        this.props.refreshSwagger(this.findProjectById().swaggerUrl)
     }
     selectProject=(id)=>{
         this.props.projects!=null?this.props.projects.map((p)=>{
