@@ -63,6 +63,26 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
             activeTag:""
         }
     }
+
+    public componentDidMount() {
+        /**
+         * if empty ==>init it
+         */
+       if(!this.isNull(this.props.selectedProject) && this.isNull(this.props.tmpSwagger.paths) ){
+           this.props.selectProject(this.props.selectedProject)
+       }
+    }
+    isNull=(str)=> {
+        if (str == null) return true
+        if (str == "") return true
+        if (str.constructor==Array ){
+            if(str.length==0) return true
+        }
+        return false
+    }
+
+
+
     refreshSwagger=()=>{
       //  this.props.refreshSwagger(project.swaggerUrl)
         this.props.refreshSwagger(this.findProjectById().swaggerUrl)
