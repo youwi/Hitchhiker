@@ -15,6 +15,7 @@ import {Dropdown, Icon, Select, Row, Col} from "antd"
 import SwaggerParamList from "./swagger_param_list"
 const Option = Select.Option;
 import {Input} from 'antd';
+import SwaggerSchemaView from "./swagger_schema_view";
 
 const Search = Input.Search;
 
@@ -195,15 +196,24 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                                     <div>
                                                         <pre></pre>
                                                         <h3>Headers</h3><p><span>{swagger.paths[path][method].consumes&& swagger.paths[path][method].consumes.join(";")}</span></p>
-                                                        <h3>Request Body</h3><p><span>{swagger.paths[path][method].consumes&&swagger.paths[path][method].consumes.join(";")}</span></p>
-                                                        <h3>Headers</h3> <p><span>content-type:application/json;wrapper=higgs</span></p>
-                                                        <h4>Response Body</h4> <div className="path-info-body"><div className="param-container">
-                                                        <span className="param-ref">
-                                                        <SwaggerParamList definitions={swagger.definitions} parameters={swagger.paths[path][method].parameters} refName=""/>
-                                                        </span>
+                                                        <h3>Request Body</h3>
+                                                        <div className="path-info-body">
+                                                            {
+                                                                swagger.paths[path][method].parameters.map((parameter)=>{
+                                                                    if(parameter.in=="body") return  <SwaggerSchemaView definitions={swagger.definitions} schema={parameter.schema} />
+                                                                    if(parameter.in=='path') return  <div/>
+                                                                    return <div></div>
+
+                                                                })
+                                                            }
+                                                        </div>
+                                                        <h3>Response Headers</h3> <p><span>content-type:application/json;wrapper=higgs</span></p>
+                                                        <h4>Response Body</h4>
+                                                        <div className="path-info-body">
+                                                            <SwaggerSchemaView definitions={swagger.definitions} schema={swagger.paths[path][method].responses['200'].schema} />
+                                                        </div>
                                                     </div>
-                                                    </div>
-                                                    </div>
+
                                                 </div>):null
                                             }
 
