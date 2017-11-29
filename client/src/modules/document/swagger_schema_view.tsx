@@ -43,6 +43,16 @@ class SwaggerSchemaView extends React.Component<SwaggerParamProps, SwaggerParamS
             if(schema.definitions) prefix+="//"+schema.description
             subfix=" ] "
         }
+        let example={}
+        Object.keys(schema.properties).map((key)=>{
+
+            if( schema.properties[key].type=="string")
+                example[key]="string"
+            if( schema.properties[key].type=='integer')
+                example[key]=0
+            if( schema.properties[key].type=='array')
+                example[key]=[]
+        })
 
          return (<div>
                  <Tabs defaultActiveKey="1" size="small" className="fix-swagger-schema-tab">
@@ -63,7 +73,13 @@ class SwaggerSchemaView extends React.Component<SwaggerParamProps, SwaggerParamS
                          </div>
                          {subfix}
                      </TabPane>
-                     <TabPane tab="example" key="2">Content of tab 2</TabPane>
+                     <TabPane tab="example" key="2">
+                         <pre>
+                             {
+                                    JSON.stringify(example,null,4)
+                             }
+                         </pre>
+                     </TabPane>
                  </Tabs>
 
 
