@@ -71,7 +71,7 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
         this.props.selectTag(param.item.props.data.id);
     }
     selectMultiTag = (tags) => {
-
+        this.props.selectTag(tags.join(","));
     }
     /**
      * "value" maybe = event
@@ -79,9 +79,9 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
      */
     onSearchPath=(value)=>{
         if(value.constructor==String)
-            this.setState({searchText:value})
+            this.setState({searchText:value.trim()})
         else if(value.target){
-            this.setState({searchText:value.target.value})
+            this.setState({searchText:value.target.value.trim()})
         }
     }
     calcFilterCount=()=>{
@@ -93,7 +93,7 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                     if (activeTag == "")
                         return true;
                     if (swagger.paths[path][method].tags)
-                        return swagger.paths[path][method].tags.indexOf(activeTag) > -1;
+                        return this.tagsMatch(swagger.paths[path][method].tags,activeTag.split(","))
                     return false
                 }).filter((method)=>{
                     if(this.state.searchText=="" ||this.state.searchText==null) return true;
@@ -113,6 +113,17 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
             toggleState[methodPath]=false
         }
         this.setState({toggleState})
+    }
+    /**
+     *  ['a','b','c'] is contain anyone of [ 'a' 'b' ,'d']
+     */
+    tagsMatch=(tags,selectTags)=>{
+        for(let tag of tags){
+            for(let selectTag of selectTags){
+                if(tag==selectTag) return true
+            }
+        }
+        return false
     }
 
 
@@ -141,7 +152,7 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                     placeholder="Select Tag"
                                     onChange={this.selectMultiTag}
                                 >
-                                    {swagger.tags.map((tag, i) => <Option key={i}>{tag.name}</Option>)}
+                                    {swagger.tags.map((tag, i) => <Option key={tag.name} >{tag.name}</Option>)}
                                 </Select>
                             </Col>
                             <Col span={6}>
@@ -160,7 +171,7 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                     if (activeTag == "")
                                         return true;
                                     if (swagger.paths[path][method].tags)
-                                        return swagger.paths[path][method].tags.indexOf(activeTag) > -1;
+                                        return this.tagsMatch(swagger.paths[path][method].tags,activeTag.split(","))
                                     return false
                                 }).filter((method)=>{
                                     if(this.state.searchText=="" ||this.state.searchText==null) return true;
@@ -170,8 +181,8 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
 
                                     return false;
                                 }).map(method =>
-                                    (<li className="path-li path-li-post" key={method + path} onClick={(e)=>this.toggleDetail(method+path)}>
-                                            <div className="path-head">
+                                    (<li className="path-li path-li-post" key={method + path} >
+                                            <div className="path-head" onClick={(e)=>this.toggleDetail(method+path)}>
                                                 <span className="path-method">{method}</span>
                                                 <span className="path-name">{path}</span>
                                                 <span className="path-description text-ellipsis">{swagger.paths[path][method].summary}</span>
@@ -182,9 +193,12 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                             {
                                                 this.state.toggleState[method+path]?(<div className="path-info path-info-show" >
                                                     <div>
-                                                        <pre></pre> <h3>Parameters</h3> <p><span>content-type:application/json</span></p>
-                                                        <h3>Responses</h3> <p><span>content-type:application/json;wrapper=higgs</span></p>
-                                                        <h4>Body</h4> <div className="path-info-body"><div className="param-container">  <span className="param-ref">
+                                                        <pre></pre>
+                                                        <h3>Headers</h3><p><span>{swagger.paths[path][method].consumes&& swagger.paths[path][method].consumes.join(";")}</span></p>
+                                                        <h3>Request Body</h3><p><span>{swagger.paths[path][method].consumes&&swagger.paths[path][method].consumes.join(";")}</span></p>
+                                                        <h3>Headers</h3> <p><span>content-type:application/json;wrapper=higgs</span></p>
+                                                        <h4>Response Body</h4> <div className="path-info-body"><div className="param-container">
+                                                        <span className="param-ref">
                                                     <span className="link">VAccount</span>
                                                     <i className="h-icon-link link"></i></span>
                                                         <span className="param-view-prefix"></span>

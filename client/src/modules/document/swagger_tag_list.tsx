@@ -66,8 +66,10 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
     }
     calcTagNameCount=(swagger)=>{
         let newTags={}
+        let allCount=0
         Object.keys(swagger.paths).map(path=>{
             Object.keys(swagger.paths[path]).map(method=>{
+                allCount++
                 if(swagger.paths[path][method].tags!=null)
                     swagger.paths[path][method].tags.map(tag=>{
                         if( newTags[tag]==null)  newTags[tag]=0
@@ -75,6 +77,7 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
                     })
             })
         })
+        newTags["All"]=allCount
         return newTags
     }
     refreshSwagger=(e)=>{
@@ -114,9 +117,12 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
                         className="path-tags-list"
                         mode="inline"
                         inlineIndent={0}
-                        selectedKeys={[activeTag]}
+                        selectedKeys={activeTag.split(",")}
                         onSelect={this.onSelectChanged}
                     >
+                        <Menu.Item key="All" data={{errname:"All"}}>
+                            All<span className="h-badge-count">{tagNameCount["All"]}</span>
+                        </Menu.Item>
                         {
                             swagger.tags.sort((a,b)=>a.name.localeCompare(b.name)).map(t =>
                                 (

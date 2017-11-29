@@ -107,7 +107,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
                 <Splitter resizeCollectionPanel={this.props.resizeLeftPanel} />
                 <Content>
                     <PerfectScrollbar>
-                        <SwaggerPathList swagger={tmpSwagger} activeTag={this.state.activeTag||""} selectTag={()=>{}}/>
+                        <SwaggerPathList swagger={tmpSwagger} activeTag={this.state.activeTag||""} selectTag={(activeTag)=>{this.setState({activeTag})}}/>
                     </PerfectScrollbar>
                 </Content>
             </Layout>
