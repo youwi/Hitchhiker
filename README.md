@@ -38,4 +38,8 @@ Hitchhiker Api is a Restful Api integrated testing tool that support Schedule, R
     react
     redux
     redux-saga
+    typeorm
+    
+## tips
+    typeorm will create datebase tables,so there is no SQL file .
     

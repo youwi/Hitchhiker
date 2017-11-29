@@ -12,7 +12,7 @@ import {DtoRecord} from '../../../../server/src/interfaces/dto_record';
 import {DtoEnvironment} from '../../../../server/src/interfaces/dto_environment';
 import {DtoCollection} from '../../../../server/src/interfaces/dto_collection';
 import {Dropdown, Icon, Select, Row, Col} from "antd"
-
+import SwaggerParamList from "./swagger_param_list"
 const Option = Select.Option;
 import {Input} from 'antd';
 
@@ -199,11 +199,10 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                                         <h3>Headers</h3> <p><span>content-type:application/json;wrapper=higgs</span></p>
                                                         <h4>Response Body</h4> <div className="path-info-body"><div className="param-container">
                                                         <span className="param-ref">
-                                                    <span className="link">VAccount</span>
-                                                    <i className="h-icon-link link"></i></span>
-                                                        <span className="param-view-prefix"></span>
-                                                        <span className="param-description"></span>
-                                                    </div></div>
+                                                        <SwaggerParamList definitions={swagger.definitions} parameters={swagger.paths[path][method].parameters} refName=""/>
+                                                        </span>
+                                                    </div>
+                                                    </div>
                                                     </div>
                                                 </div>):null
                                             }
