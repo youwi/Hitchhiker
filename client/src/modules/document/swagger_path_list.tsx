@@ -100,7 +100,9 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                     if(this.state.searchText=="" ||this.state.searchText==null) return true;
                     if(path.indexOf(this.state.searchText)>-1) return true;
                     if(swagger.paths[path][method].summary && swagger.paths[path][method].summary.indexOf(this.state.searchText)>-1) return true
+                    if(swagger.paths[path][method].tags && swagger.paths[path][method].tags.indexOf(this.state.searchText)>-1) return true
                     if(swagger.paths[path][method].description && swagger.paths[path][method].description.indexOf(this.state.searchText)>-1) return true
+
                     return false;
                 }).map(()=>count++))
         return count
@@ -179,6 +181,7 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                     if(path.indexOf(this.state.searchText)>-1) return true;
                                     if(swagger.paths[path][method].summary && swagger.paths[path][method].summary.indexOf(this.state.searchText)>-1) return true
                                     if(swagger.paths[path][method].description && swagger.paths[path][method].description.indexOf(this.state.searchText)>-1) return true
+                                    if(swagger.paths[path][method].tags && swagger.paths[path][method].tags.indexOf(this.state.searchText)>-1) return true
 
                                     return false;
                                 }).map(method =>
