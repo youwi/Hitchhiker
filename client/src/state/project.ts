@@ -10,6 +10,7 @@ export interface ProjectState {
     projectFiles: ProjectFiles;
 
     currentSwagger:any;
+    currentPathTagPK:any;
 }
 
 export const projectDefaultValue: ProjectState = {
@@ -21,5 +22,6 @@ export const projectDefaultValue: ProjectState = {
         projectJS: {},
         projectData: {}
     },
-    currentSwagger:{paths:[],tags:[]}
+    currentSwagger:{paths:[],tags:[]},
+    currentPathTagPK:{}
 };

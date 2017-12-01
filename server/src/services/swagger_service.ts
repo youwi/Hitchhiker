@@ -110,8 +110,18 @@ export class SwaggerService {
     public static async getAllPathTags(projectId: string) {
         const connection = await ConnectionManager.getInstance();
 
-        const cache = await connection.getRepository(PathTag)
-            .query(" select * from path_tags where projectId=? ",[projectId])
+        // console.log(connection.getRepository(PathTag)
+        //     .createQueryBuilder("path_tag")
+        //     .where("projectId=':projectId'",{projectId})
+        //     .getSql()
+        // )
+        // there is a bug
+        // const cache = await connection.getRepository(PathTag)
+        //     .createQueryBuilder("path_tag")
+        //     .where("projectId=':projectId'",{projectId})
+        //     .getMany();
+        //  //   .query("select * from path_tag where projectId=?",[projectId])
+        const cache=await connection.getRepository(PathTag).query(`select * from path_tag where projectId='${projectId}'`)
         if(cache!=null && cache.length>0){
             return { success: true, pathTags:cache};
         }else

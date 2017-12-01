@@ -3,7 +3,7 @@ import { LoginSuccessType, SyncUserDataSuccessType } from '../action/user';
 import * as _ from 'lodash';
 import { ProjectState, projectDefaultValue } from '../state/project';
 import { ProjectFileTypes } from '../common/custom_type';
-import {SelectedProjectChangedGotSwaggerType, SelectedProjectChangedSwaggerType} from "../action/swagger";
+import {SelectedProjectChangedGotSwaggerType, SelectedProjectChangedSwaggerType, SwaggerGetAllPathTagOKType, SwaggerGetAllPathTagType, SwaggerMergePathTagType} from "../action/swagger";
 
 export function projectState(state: ProjectState = projectDefaultValue, action: any): ProjectState {
     switch (action.type) {
@@ -56,6 +56,18 @@ export function projectState(state: ProjectState = projectDefaultValue, action: 
             }
             else
                 return {... state,currentSwagger:{paths:[],tags:[]}}
+        }
+        case SwaggerMergePathTagType:{
+            let currentPathTagPK=state.currentPathTagPK
+            currentPathTagPK[action.value.pathTag.methodPath]=action.value.pathTag.targetId
+            return {...state,currentPathTagPK}
+        }
+        case SwaggerGetAllPathTagOKType:{
+            let currentPathTagPK=state.currentPathTagPK
+            action.value.pathTags.map((pt)=>{
+                currentPathTagPK[pt.methodPath]=pt.targetId
+            })
+            return {...state,currentPathTagPK}
         }
         case SaveLocalhostMappingType: {
             const { isNew, id, projectId, userId, ip } = action.value;

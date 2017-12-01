@@ -11,6 +11,7 @@ export const SelectedProjectChangedGotSwaggerType="select project then swagger n
 
 export const SwaggerChangerProgressType="change PATH_TAG's  progress object "
 export const SwaggerGetAllPathTagType="get All  PATH_TAG  progress object"
+export const SwaggerGetAllPathTagOKType="get All  PATH_TAG  progress object OK "
 export const SwaggerMergePathTagType="merge  PATH_TAG progress to local"
 
 
@@ -27,9 +28,9 @@ export function* initSwaggerNow() {
 
 export function* swaggerGetProjectAllPathTag() {
     yield takeEvery(SwaggerGetAllPathTagType, function* (action: any) {
-        let request=yield call(RequestManager.post,Urls.getUrl(`swagger/pathTags`),action.value);
-        let pathTags=yield request.json()
-        yield put(actionCreator(SwaggerGetAllPathTagType, { pathTags }));
+        let request=yield call(RequestManager.get,Urls.getUrl(`swagger/pathTags?projectId=${action.value}`));
+        let out=yield request.json()
+        yield put(actionCreator(SwaggerGetAllPathTagOKType, { pathTags:out.pathTags }));
     });
 }
 
