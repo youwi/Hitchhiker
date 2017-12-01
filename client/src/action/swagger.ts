@@ -7,7 +7,12 @@ import RequestManager from '../utils/request_manager';
 
 export const InitUpdateSwagger="initSwagger by url"
 export const SelectedProjectChangedSwaggerType="select project then swagger will change"
-export const SelectedProjectChangedGotSwaggerType="select project then swagger now change"
+export const SelectedProjectChangedGotSwaggerType="select project then swagger now update local"
+
+export const SwaggerChangerProgressType="change path tag's progress tag"
+export const SwaggerGetAllPathTagType="get All  path tag progress tag"
+export const SwaggerMergePathTagType="merge  path tag progress tag"
+
 
 
 export function* initSwaggerNow() {
@@ -19,6 +24,27 @@ export function* initSwaggerNow() {
         yield put(actionCreator(SelectedProjectChangedGotSwaggerType, { swagger:runResult }));
     });
 }
+
+
+export function* swaggerGetProjectAllPathTag() {
+    yield takeEvery(SwaggerGetAllPathTagType, function* (action: any) {
+        let request=yield call(RequestManager.post,Urls.getUrl(`swagger/pathTags`),action.value);
+        let pathTags=yield request.json()
+        yield put(actionCreator(SwaggerGetAllPathTagType, { pathTags }));
+    });
+}
+
+export function* swaggerPathProgressUpdate() {
+    yield takeEvery(SwaggerChangerProgressType, function* (action: any) {
+        yield put(actionCreator(SwaggerMergePathTagType, { pathTag:action.value }));
+        // let request=yield call(RequestManager.post,Urls.getUrl(`swagger/pathTagUpdate`),action.value);
+        // yield request.json()
+        const channelAction = syncAction({ type: SwaggerChangerProgressType, method: HttpMethod.POST, url: Urls.getUrl(`swagger/pathTagUpdate`),body:action.value});
+        yield put(channelAction);
+    });
+}
+
+
 
 export function* changeSwagger() {
     yield takeEvery(SelectedProjectChangedSwaggerType, function* (action: any) {

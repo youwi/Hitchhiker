@@ -23,8 +23,9 @@ const Search = Input.Search;
 interface SwaggerListProps {
     swagger: any;
     activeTag: any;
-
+    pathTags:any;
     selectTag(tagName: string);
+    changeProgress(methodPath,toInt:number);
 }
 
 interface SwaggerListState {
@@ -128,10 +129,26 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
         }
         return false
     }
+    buildTagsSpan=(methodPath)=>{
+        let BA=['...','0','½','¾','OK']
+        let pathTags=this.props.pathTags
+        let tagShow=BA[pathTags[methodPath]||0]
+        return <span key={methodPath} className="h-tag" onClick={(e)=>this.changeProgress(e,methodPath,pathTags[methodPath])}>{tagShow}</span>
+    }
+    changeProgress=(e,methodPath,sr)=>{
+        if(e.target){
+            e.stopPropagation()
+        }
+        if(sr==null ||sr>=4){
+            this.props.changeProgress(methodPath,0)
+        }else{
+            this.props.changeProgress(methodPath,sr+1)
+        }
+    }
 
 
     public render() {
-        const {activeTag, swagger} = this.props;
+        const {activeTag, swagger,pathTags} = this.props;
 
 
         let totalCount=0;
@@ -192,6 +209,8 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                                 <span className="path-description text-ellipsis">{swagger.paths[path][method].summary}</span>
                                                 <span className="middle-right">
                                                     {swagger.paths[path][method].tags == null ? null : swagger.paths[path][method].tags.map((tag) => <span key={method + path + tag} className="h-tag">{tag}</span>)}
+                                                    <span key={method + path } className="h-tag">{pathTags[method+":"+path]}</span>
+                                                    {this.buildTagsSpan(method+":"+path)}
                                                 </span>
                                             </div>
                                             {

@@ -15,7 +15,7 @@ import SwaggerTagList from "./swagger_tag_list";
 import {SelectedProjectChangedType,SelectedProjectTagChangedType} from "../../action/collection";
 import './swagger_style.less';
 import SwaggerPathList from "./swagger_path_list";
-import {InitUpdateSwagger, SelectedProjectChangedSwaggerType} from "../../action/swagger";
+import {InitUpdateSwagger, SelectedProjectChangedSwaggerType, SwaggerChangerProgressType} from "../../action/swagger";
 import {DtoProject} from "../../../../server/src/interfaces/dto_project";
 import * as _ from 'lodash';
 
@@ -29,7 +29,7 @@ interface ApiDocumentStateProps {
     projects: { id: string, name: string ,swaggerUrl:string }[];
     selectedProject:string;
     activeStress: string;
-
+    currentPathTags:any;
     currentRunStressId: string;
 
 
@@ -48,6 +48,7 @@ interface ApiDocumentDispatchProps {
     collapsedLeftPanel(collapsed: boolean);
     selectProjectTag(projectId:string,tagName:string);
     refreshSwagger(url);
+    changeProgress(projectId,methodPath,targetId);
 }
 
 type ApiDocumentProps = ApiDocumentStateProps & ApiDocumentDispatchProps;
@@ -103,8 +104,11 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
         return { id: "", name: "",swaggerUrl:"" }
        // this.props.projects[this.props.selectedProject]
     }
+    changeProgress=(methodPath,targetId)=>{
+        this.props.changeProgress(this.props.selectedProject,methodPath,targetId)
+    }
     public render() {
-        const { collapsed, leftPanelWidth, collapsedLeftPanel,user ,tmpSwagger} = this.props;
+        const { collapsed, leftPanelWidth, collapsedLeftPanel,user ,tmpSwagger,currentPathTags} = this.props;
 
 
         return (
@@ -127,7 +131,12 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
                 <Splitter resizeCollectionPanel={this.props.resizeLeftPanel} />
                 <Content>
                     <PerfectScrollbar>
-                        <SwaggerPathList swagger={tmpSwagger} activeTag={this.state.activeTag||""} selectTag={(activeTag)=>{this.setState({activeTag})}}/>
+                        <SwaggerPathList swagger={tmpSwagger}
+                                         pathTags={currentPathTags}
+                                         activeTag={this.state.activeTag||""}
+                                         selectTag={(activeTag)=>{this.setState({activeTag})}}
+                                         changeProgress={this.changeProgress}
+                        />
                     </PerfectScrollbar>
                 </Content>
             </Layout>
@@ -137,7 +146,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
 
 const mapStateToProps = (state: any): ApiDocumentStateProps => {
     const { leftPanelWidth, collapsed } = state.uiState.appUIState;
-    const {projects,currentSwagger}=state.projectState;
+    const {projects,currentSwagger,currentPathTags}=state.projectState;
     const {selectedProject } = state.collectionState;
     let arr;
     if(projects.constructor==Object){
@@ -153,6 +162,7 @@ const mapStateToProps = (state: any): ApiDocumentStateProps => {
         leftPanelWidth,
         projects:arr,
         collapsed,
+        currentPathTags:require("./pathTags-example.json"),
         tmpSwagger:currentSwagger||require("./swagger-example.json")
      };
 };
@@ -164,6 +174,10 @@ const mapDispatchToProps = (dispatch: Dispatch<any>): ApiDocumentDispatchProps =
         selectProject: projectId => {
             dispatch(actionCreator(SelectedProjectChangedSwaggerType, projectId))
             dispatch(actionCreator(SelectedProjectChangedType, projectId))
+        },
+        changeProgress:(projectId,methodPath,targetId)=>{
+            console.log(projectId,methodPath,targetId)
+            dispatch(actionCreator(SwaggerChangerProgressType, {projectId,methodPath,targetId}))
         },
         selectProjectTag: (projectId,tagName) => dispatch(actionCreator(SelectedProjectTagChangedType, {projectId,tagName})),
         refreshSwagger:(url )=>dispatch(actionCreator(InitUpdateSwagger,{url}))
