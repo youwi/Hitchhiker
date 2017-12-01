@@ -32,6 +32,7 @@ export class Message {
     static envNotExist: string = 'environment does not exist';
 
     static projectSaveSuccess: string = 'project save success';
+    static projectPathTagSaveSuccess :string='project PATH_TAG save success';
     static projectUpdateSuccess: string = 'project update success';
     static projectQuitSuccess: string = 'quit project success';
     static projectNotExist: string = 'project does not exist';

@@ -7,6 +7,7 @@ import { RecordService } from '../services/record_service';
 import { SessionService } from '../services/session_service';
 import {DtoSwaggerCache} from "../interfaces/dto_swagger_cache";
 import {SwaggerService} from "../services/swagger_service";
+import {DtoPathTag} from "../interfaces/dto_path_tag";
 
 export default class SwaggerController extends BaseController {
 
@@ -21,6 +22,17 @@ export default class SwaggerController extends BaseController {
         const user = SessionService.getUser(ctx);
         const record = SwaggerService.fromDto(data);
         return await SwaggerService.refreshByUrlOrId(record, user);
+    }
+
+    @POST('/swagger/pathTagUpdate')
+    async savePathTag(ctx: Koa.Context, @BodyParam data: DtoPathTag) {
+        const user = SessionService.getUser(ctx);
+        const record = SwaggerService.fromDtoPathTag(data);
+        return await SwaggerService.savePathTag(record, user);
+    }
+    @GET('/swagger/pathTags')
+    async getAllPathTagsByProjectId(ctx: Koa.Context, @QueryParam('projectId') projectId) {
+        return await SwaggerService.getAllPathTags(projectId);
     }
 
     @POST('/swagger/:id')

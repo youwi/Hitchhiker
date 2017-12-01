@@ -9,10 +9,9 @@ export const InitUpdateSwagger="initSwagger by url"
 export const SelectedProjectChangedSwaggerType="select project then swagger will change"
 export const SelectedProjectChangedGotSwaggerType="select project then swagger now update local"
 
-export const SwaggerChangerProgressType="change path tag's progress tag"
-export const SwaggerGetAllPathTagType="get All  path tag progress tag"
-export const SwaggerMergePathTagType="merge  path tag progress tag"
-
+export const SwaggerChangerProgressType="change PATH_TAG's  progress object "
+export const SwaggerGetAllPathTagType="get All  PATH_TAG  progress object"
+export const SwaggerMergePathTagType="merge  PATH_TAG progress to local"
 
 
 export function* initSwaggerNow() {

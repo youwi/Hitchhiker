@@ -10,6 +10,8 @@ import {User} from "../models/user";
 import {Log} from "../utils/log";
 import * as request from 'request';
 import fetch from  'node-fetch';
+import {PathTag} from "../models/path_tag"
+import {DtoPathTag} from "../interfaces/dto_path_tag";
 
 export class SwaggerService {
 
@@ -19,6 +21,12 @@ export class SwaggerService {
         variable.id = variable.id || StringUtil.generateUID();
         return variable;
     }
+    static fromDtoPathTag(dto: DtoPathTag) {
+        const variable = dto as PathTag;
+        variable.id = variable.id || StringUtil.generateUID();
+        return variable;
+    }
+
 
     static async save(swagger: SwaggerCache,user:DtoUser): Promise<ResObject> {
         const connection = await ConnectionManager.getInstance();
@@ -26,6 +34,16 @@ export class SwaggerService {
         await connection.getRepository(SwaggerCache).persist(swagger);
 
         return { success: true, message: Message.projectSaveSuccess };
+    }
+    static async savePathTag(pathTag:PathTag,user:DtoUser){
+        const connection = await ConnectionManager.getInstance();
+        let arr= await connection.getRepository(PathTag).query("select * from path_tag where projectId=? and methodPath=?",[pathTag.projectId,pathTag.methodPath])
+
+        if(arr!=null && arr.length>0){
+            pathTag.id=arr[0].id
+        }
+        await connection.getRepository(PathTag).persist(pathTag);
+        return { success: true, message: Message.projectPathTagSaveSuccess };
     }
 
     static async updateCache(cache: SwaggerCache): Promise<ResObject> {
@@ -87,5 +105,16 @@ export class SwaggerService {
 
     static refreshByUrlOrId(record: SwaggerCache, user: User) {
 
+    }
+
+    public static async getAllPathTags(projectId: string) {
+        const connection = await ConnectionManager.getInstance();
+
+        const cache = await connection.getRepository(PathTag)
+            .query(" select * from path_tags where projectId=? ",[projectId])
+        if(cache!=null && cache.length>0){
+            return { success: true, pathTags:cache};
+        }else
+            return { success: false, message: "PathTag not Found"};
     }
 }
