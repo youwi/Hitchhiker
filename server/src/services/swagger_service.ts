@@ -129,4 +129,14 @@ export class SwaggerService {
         }else
             return { success: false, message: "PathTag not Found"};
     }
+
+    static async getAllPathRecords(url: string) {
+        const connection = await ConnectionManager.getInstance();
+        const cache=await connection.getRepository(PathTag).query(` select * from record where url like '%${url}%' GROUP BY  collectionId`)
+        if(cache!=null && cache.length>0){
+            return { success: true, records:cache};
+        }else
+            return { success: false, message: "PathTag not Found"};
+
+    }
 }

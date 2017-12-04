@@ -34,6 +34,10 @@ export default class SwaggerController extends BaseController {
     async getAllPathTagsByProjectId(ctx: Koa.Context, @QueryParam('projectId') projectId) {
         return await SwaggerService.getAllPathTags(projectId);
     }
+    @GET('/swagger/pathRecords')
+    async getAllPathRecordsByUrl(ctx: Koa.Context, @QueryParam("url") url: string) {
+        return await SwaggerService.getAllPathRecords(url);
+    }
 
     @POST('/swagger/:id')
     async createOrUpdate(ctx: Koa.Context, @BodyParam sc: DtoSwaggerCache): Promise<ResObject> {
