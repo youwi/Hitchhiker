@@ -108,7 +108,7 @@ export class SwaggerService {
     static refreshByUrlOrId(record: SwaggerCache, user: User) {
 
     }
-
+    // SQL injection @unsafe i know
     public static async getAllPathTags(projectId: string) {
         const connection = await ConnectionManager.getInstance();
 
@@ -130,6 +130,7 @@ export class SwaggerService {
             return { success: false, message: "PathTag not Found"};
     }
 
+    // SQL injection @unsafe i know
     static async getAllPathRecords(url: string) {
         const connection = await ConnectionManager.getInstance();
         const cache=await connection.getRepository(PathTag).query(` select * from record where url like '%${url}%' GROUP BY  collectionId`)
