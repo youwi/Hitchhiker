@@ -29,6 +29,7 @@ interface ApiDocumentStateProps {
     projects: { id: string, name: string ,swaggerUrl:string }[];
     selectedProject:string;
     activeStress: string;
+    currentPathTagsPK:any;
     currentPathTags:any;
     currentRunStressId: string;
 
@@ -73,7 +74,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
        if(!this.isNull(this.props.selectedProject) && this.isNull(this.props.tmpSwagger.paths) ){
            this.props.selectProject(this.props.selectedProject)
        }
-        if(!this.isNull(this.props.currentPathTags)  ){
+        if(!this.isNull(this.props.currentPathTagsPK)  ){
             this.props.getPathTagProgress(this.props.selectedProject)
         }
     }
@@ -115,7 +116,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
         this.props.changeProgress(this.props.selectedProject,methodPath,targetId)
     }
     public render() {
-        const { collapsed, leftPanelWidth, collapsedLeftPanel,user ,tmpSwagger,currentPathTags} = this.props;
+        const { collapsed, leftPanelWidth, collapsedLeftPanel,user ,tmpSwagger,currentPathTagsPK,currentPathTags} = this.props;
 
 
         return (
@@ -139,6 +140,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
                 <Content>
                     <PerfectScrollbar>
                         <SwaggerPathList swagger={tmpSwagger}
+                                         pathTagsPK={currentPathTagsPK}
                                          pathTags={currentPathTags}
                                          activeTag={this.state.activeTag||""}
                                          selectTag={(activeTag)=>{this.setState({activeTag})}}
@@ -153,7 +155,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
 
 const mapStateToProps = (state: any): ApiDocumentStateProps => {
     const { leftPanelWidth, collapsed } = state.uiState.appUIState;
-    const {projects,currentSwagger,currentPathTagPK}=state.projectState;
+    const {projects,currentSwagger,currentPathTagsPK,currentPathTags}=state.projectState;
     const {selectedProject } = state.collectionState;
     let arr;
     if(projects.constructor==Object){
@@ -169,8 +171,9 @@ const mapStateToProps = (state: any): ApiDocumentStateProps => {
         leftPanelWidth,
         projects:arr,
         collapsed,
-        currentPathTags:currentPathTagPK||require("./pathTags-example.json"),
-        tmpSwagger:currentSwagger||require("./swagger-example.json")
+        currentPathTags,
+        currentPathTagsPK, // require("./..json")
+        tmpSwagger:currentSwagger  //||require("./swagger-example.json")
      };
 };
 

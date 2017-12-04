@@ -24,6 +24,7 @@ interface SwaggerListProps {
     swagger: any;
     activeTag: any;
     pathTags:any;
+    pathTagsPK:any;
     selectTag(tagName: string);
     changeProgress(methodPath,toInt:number);
 }
@@ -132,8 +133,15 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
     buildTagsSpan=(methodPath)=>{
         let BA=['...','0','½','¾','OK']
         let pathTags=this.props.pathTags
-        let tagShow=BA[pathTags[methodPath]||0]
-        return <span key={methodPath} className="h-tag" onClick={(e)=>this.changeProgress(e,methodPath,pathTags[methodPath])}>{tagShow}</span>
+        if(pathTags[methodPath]==null){
+            return <span key={methodPath} className="h-tag  h-tag-sp" onClick={(e)=>this.changeProgress(e,methodPath,0)}>...</span>
+        }
+        let tagShow=BA[pathTags[methodPath].targetId||0]
+        return <span key={methodPath} className="h-tag h-tag-sp" onClick={(e)=>this.changeProgress(e,methodPath,pathTags[methodPath].targetId)}>
+             <Tooltip placement="top" title={pathTags[methodPath].createBy}>
+                     {tagShow}
+                  </Tooltip>
+            </span>
     }
     changeProgress=(e,methodPath,sr)=>{
         if(e.target){
@@ -148,7 +156,7 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
 
 
     public render() {
-        const {activeTag, swagger,pathTags} = this.props;
+        const {activeTag, swagger,pathTags,pathTagsPK} = this.props;
 
 
         let totalCount=0;
@@ -209,10 +217,12 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                                 <span className="path-description text-ellipsis">{swagger.paths[path][method].summary}</span>
                                                 <span className="middle-right">
                                                     {swagger.paths[path][method].tags == null ? null : swagger.paths[path][method].tags.map((tag) => <span key={method + path + tag} className="h-tag">{tag}</span>)}
-                                                    <span key={method + path } className="h-tag">{pathTags[method+":"+path]}</span>
+                                                    {/*<span key={method + path } className="h-tag">{pathTagsPK[method+":"+path]}</span>*/}
                                                     {this.buildTagsSpan(method+":"+path)}
+
                                                 </span>
                                             </div>
+
                                             {
                                                 this.state.toggleState[method+path]?(<div className="path-info path-info-show" >
                                                     <div>
@@ -238,6 +248,7 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
 
                                                 </div>):null
                                             }
+
 
                                         </li>
                                     )

@@ -41,7 +41,9 @@ export class SwaggerService {
 
         if(arr!=null && arr.length>0){
             pathTag.id=arr[0].id
+            pathTag.createBy=user.name
         }
+        pathTag.createBy=user.name
         await connection.getRepository(PathTag).persist(pathTag);
         return { success: true, message: Message.projectPathTagSaveSuccess };
     }

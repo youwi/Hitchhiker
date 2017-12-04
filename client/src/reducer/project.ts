@@ -58,16 +58,20 @@ export function projectState(state: ProjectState = projectDefaultValue, action: 
                 return {... state,currentSwagger:{paths:[],tags:[]}}
         }
         case SwaggerMergePathTagType:{
-            let currentPathTagPK=state.currentPathTagPK
-            currentPathTagPK[action.value.pathTag.methodPath]=action.value.pathTag.targetId
-            return {...state,currentPathTagPK}
+            let currentPathTagsPK=state.currentPathTagsPK
+            currentPathTagsPK[action.value.pathTag.methodPath]=action.value.pathTag.targetId
+            let currentPathTags=state.currentPathTags
+            currentPathTags[action.value.pathTag.methodPath]=action.value.pathTag
+            return {...state,currentPathTagsPK,currentPathTags}
         }
         case SwaggerGetAllPathTagOKType:{
-            let currentPathTagPK=state.currentPathTagPK
+            let currentPathTagsPK=state.currentPathTagsPK
             action.value.pathTags.map((pt)=>{
-                currentPathTagPK[pt.methodPath]=pt.targetId
+                currentPathTagsPK[pt.methodPath]=pt.targetId
             })
-            return {...state,currentPathTagPK}
+            // merget as dict
+            let dict=action.value.pathTags.reduce((pre,curr) => ({ ...pre, [curr.methodPath]: curr }), {});
+            return {...state,currentPathTagsPK,currentPathTags:dict}
         }
         case SaveLocalhostMappingType: {
             const { isNew, id, projectId, userId, ip } = action.value;
