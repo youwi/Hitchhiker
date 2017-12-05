@@ -71,20 +71,20 @@ export function projectState(state: ProjectState = projectDefaultValue, action: 
             return {...state}
         }
         case SwaggerMergePathTagType:{
-            let currentPathTagsPK=state.currentPathTagsPK
-            currentPathTagsPK[action.value.pathTag.methodPath]=action.value.pathTag.targetId
-            let currentPathTags=state.currentPathTags
-            currentPathTags[action.value.pathTag.methodPath]=action.value.pathTag
+            let currentPathTagsPK=state.currentPathTagsPK;
+            currentPathTagsPK[action.value.pathTag.methodPath]=action.value.pathTag.targetId;
+            let currentPathTags=state.currentPathTags;
+            currentPathTags[action.value.pathTag.methodPath]=action.value.pathTag;
             return {...state,currentPathTagsPK,currentPathTags}
         }
         case SwaggerGetAllPathTagOKType:{
-            let currentPathTagsPK=state.currentPathTagsPK
+            let currentPathTagsPK=state.currentPathTagsPK;
             if(action.value.pathTags==null){
                 return {...state}
             }
             action.value.pathTags.map((pt)=>{
                 currentPathTagsPK[pt.methodPath]=pt.targetId
-            })
+            });
             let dict=action.value.pathTags.reduce((pre,curr) => ({ ...pre, [curr.methodPath]: curr }), {});
             return {...state,currentPathTagsPK,currentPathTags:dict}
         }

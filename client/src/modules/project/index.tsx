@@ -94,12 +94,12 @@ class Project extends React.Component<ProjectProps, ProjectState> {
 
     getSelectedProject = () => {
         return this.props.projects.find(t => t.id === this.props.activeProject);
-    }
+    };
 
     isSelectProjectOwn = () => {
         const project = this.getSelectedProject();
         return !!project && !!project.owner && project.owner.id === this.props.user.id;
-    }
+    };
 
     getSelectProjectMembers = () => {
         const project = this.getSelectedProject();
@@ -115,48 +115,48 @@ class Project extends React.Component<ProjectProps, ProjectState> {
             localhost: localhostDict[t.id] ? localhostDict[t.id].ip || localhost : localhost,
             isOwner: t.id === project.owner.id
         })), m => m.name);
-    }
+    };
 
     getSelectProjectEnvironments = () => {
         const env = this.props.environments[this.props.activeProject];
         return _.sortBy(env, e => e.name);
-    }
+    };
     getCurrentProjectSwaggerUrl=()=>{
-         let obj=this.props.projects.find(t => t.id === this.props.activeProject)
+         let obj=this.props.projects.find(t => t.id === this.props.activeProject);
          if(obj!=null) return obj.swaggerUrl;
-         else return ""
-    }
+         else return ''
+    };
     getCurrentProjectShared=()=>{
-        let obj=this.props.projects.find(t => t.id === this.props.activeProject)
+        let obj=this.props.projects.find(t => t.id === this.props.activeProject);
         if(obj!=null) return obj.shared;
         else return false
-    }
+    };
     changeSwaggerUrl=(ev)=>{
-        let project=   this.getSelectedProject()
-        let v=""
+        let project=   this.getSelectedProject();
+        let v='';
         if(ev.constructor==String){
             v=ev
         }else if(ev.target.value!=null){
             v=ev.target.value
         }
         if(project!=null){
-            project.swaggerUrl=v
+            project.swaggerUrl=v;
             this.props.updateProject(project)
         }
-    }
+    };
     changeProjectSharedKey=(ev)=>{
-        let project=   this.getSelectedProject()
-        let v=false
+        let project=   this.getSelectedProject();
+        let v=false;
         if(ev.constructor==Boolean){
             v=ev
         }else if(ev.target&&ev.target.checked!=null){
             v=ev.target.checked
         }
         if(project!=null){
-            project.shared=v
+            project.shared=v;
             this.props.updateProject(project)
         }
-    }
+    };
 
 
     public render() {

@@ -1,15 +1,15 @@
-import { take, actionChannel, call, spawn, put } from 'redux-saga/effects';
-import { delay } from 'redux-saga';
-import RequestManager, { SyncItem } from '../utils/request_manager';
-import { sendRequest, saveRecord, saveAsRecord, deleteRecord, moveRecord, sendRequestForParam } from './record';
-import { saveProject, quitProject, disbandProject, removeUser, inviteMember, saveEnvironment, delEnvironment, saveLocalhostMapping, saveGlobalFunction, delProjectFile } from './project';
-import { deleteCollection, saveCollection, importPostman } from './collection';
-import { login, logout, register, findPassword, getUserInfo, changePassword, tempUse, syncUserData } from './user';
-import { storeLocalData, fetchLocalData } from './local_data';
-import { deleteSchedule, saveSchedule, runSchedule } from './schedule';
-import { saveStress, deleteStress, runStress } from './stress';
-import { GlobalVar } from '../utils/global_var';
-import {changeSwagger, initSwaggerNow, swaggerGetProjectAllPathRecords, swaggerGetProjectAllPathTag, swaggerPathProgressUpdate} from "./swagger"
+import {take, actionChannel, call, spawn, put} from 'redux-saga/effects';
+import {delay} from 'redux-saga';
+import RequestManager, {SyncItem} from '../utils/request_manager';
+import {sendRequest, saveRecord, saveAsRecord, deleteRecord, moveRecord, sendRequestForParam} from './record';
+import {saveProject, quitProject, disbandProject, removeUser, inviteMember, saveEnvironment, delEnvironment, saveLocalhostMapping, saveGlobalFunction, delProjectFile} from './project';
+import {deleteCollection, saveCollection, importPostman} from './collection';
+import {login, logout, register, findPassword, getUserInfo, changePassword, tempUse, syncUserData} from './user';
+import {storeLocalData, fetchLocalData} from './local_data';
+import {deleteSchedule, saveSchedule, runSchedule} from './schedule';
+import {saveStress, deleteStress, runStress} from './stress';
+import {GlobalVar} from '../utils/global_var';
+import {changeSwagger, initSwaggerNow, swaggerGetProjectAllPathRecords, swaggerGetProjectAllPathTag, swaggerPathProgressUpdate} from './swagger';
 
 export const SyncType = 'sync';
 
@@ -25,9 +25,11 @@ export const SessionInvalidType = 'session invalid';
 
 export const ReloadType = 'reload';
 
-export function actionCreator<T>(type: string, value?: T) { return { type, value }; };
+export function actionCreator<T>(type: string, value?: T) {
+    return {type, value};
+};
 
-export const syncAction = (syncItem: SyncItem) => ({ type: SyncType, syncItem });
+export const syncAction = (syncItem: SyncItem) => ({type: SyncType, syncItem});
 
 export function* rootSaga() {
 
@@ -80,7 +82,7 @@ function* sync() {
     const channel = yield actionChannel(SyncType);
 
     while (true) {
-        const { syncItem } = yield take(channel);
+        const {syncItem} = yield take(channel);
         yield call(handleRequest, syncItem);
     }
 }
@@ -111,7 +113,7 @@ function* handleRequest(syncItem: SyncItem) {
             return;
         } catch (e) {
             delayTime *= 2;
-            yield put(actionCreator(SyncRetryType, { errMsg: e.toString(), delay: delayTime, time: i + 1, syncItem }));
+            yield put(actionCreator(SyncRetryType, {errMsg: e.toString(), delay: delayTime, time: i + 1, syncItem}));
             yield call(delay, delayTime);
         }
     }
