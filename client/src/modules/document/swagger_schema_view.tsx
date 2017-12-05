@@ -28,29 +28,29 @@ class SwaggerSchemaView extends React.Component<SwaggerParamProps, SwaggerParamS
         if (schema.$ref) {
             //"#/definitions/VBdAccountScore" .substring(14)=>VBdAccountScore
             schemaName = schema.$ref.substring(14);
-            schema = definitions[schema.$ref.substring(14)]
+            schema = definitions[schema.$ref.substring(14)];
         }
 
 
         let prefix = '';
         let subfix = '';
-        let retips = " // ";
-        let splitTag = " : ";
+        let retips = ' // ';
+        let splitTag = ' : ';
         //  let splitCom=", ";
         if (schema.type === 'object') {
-            prefix = " {  ";
+            prefix = ' {  ';
             if (schema.definitions) prefix += "//" + schema.description;
-            subfix = " } "
+            subfix = ' } '
         } else if (schema.type === 'array') {
-            prefix = " [ ";
+            prefix = ' [ ';
             if (schema.definitions) prefix += "//" + schema.description;
-            subfix = " ] "
+            subfix = ' ] ';
         }
         let example = {};
         Object.keys(schema.properties).map((key) => {
 
             if (schema.properties[key].type === 'string')
-                example[key] = "string";
+                example[key] = 'string';
             if (schema.properties[key].type === 'integer')
                 example[key] = 0;
             if (schema.properties[key].type === 'array')
@@ -64,15 +64,13 @@ class SwaggerSchemaView extends React.Component<SwaggerParamProps, SwaggerParamS
                         {prefix}
                         <i className="h-icon-link link"/>
                         <div className="param-container">
-                            {
-                                Object.keys(schema.properties).map((key, index) => <div className="param-name" key={index}>
+                            {Object.keys(schema.properties).map((key, index) => <div className="param-name" key={index}>
                                     <span className="param-key">{key}</span>
                                     <span className="param-split">{splitTag}</span>
                                     <span className="param-type">{schema.properties[key].type}</span>
                                     <span className="param-description">{schema.properties[key].description != null ? retips : ''}</span>
                                     <span className="param-description">{schema.properties[key].description}</span>
-                                </div>)
-                            }
+                                </div>)}
                         </div>
                         {subfix}
                     </TabPane>

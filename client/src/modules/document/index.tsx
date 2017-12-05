@@ -63,9 +63,9 @@ interface ApiDocumentState {
 
 class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
     constructor(props){
-        super(props)
+        super(props);
         this.state={
-            activeTag:""
+            activeTag:''
         }
     }
 
@@ -81,8 +81,8 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
         }
     }
     isNull=(str)=> {
-        if (str == null) return true
-        if (str == "") return true
+        if (str == null) return true;
+        if (str == '') return true;
         if (str.constructor==Object){
            return Object.keys(str).length==0
         }
@@ -90,14 +90,14 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
             if(str.length==0) return true
         }
         return false
-    }
+    };
 
 
 
     refreshSwagger=()=>{
       //  this.props.refreshSwagger(project.swaggerUrl)
         this.props.refreshSwagger(this.findProjectById().swaggerUrl)
-    }
+    };
     selectProject=(id)=>{
         this.props.projects!=null?this.props.projects.map((p)=>{
             if(p.id==id){
@@ -105,18 +105,18 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
             }
         }):null;
 
-    }
+    };
     findProjectById=(id=this.props.selectedProject)=>{
         for(let project of this.props.projects){
             if(project.id==id)
                 return project
         }
-        return { id: "", name: "",swaggerUrl:"" }
+        return { id: '', name: '',swaggerUrl:'' }
        // this.props.projects[this.props.selectedProject]
-    }
+    };
     changeProgress=(methodPath,targetId)=>{
         this.props.changeProgress(this.props.selectedProject,methodPath,targetId)
-    }
+    };
     public render() {
         const { collapsed, leftPanelWidth, collapsedLeftPanel,user ,tmpSwagger,currentPathTagsPK,currentPathTags} = this.props;
 
@@ -131,7 +131,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
                     collapsed={collapsed}
                     onCollapse={collapsedLeftPanel}>
                     <SwaggerTagList swagger={tmpSwagger}
-                                    activeTag={this.state.activeTag||""}
+                                    activeTag={this.state.activeTag||''}
                                     project={this.findProjectById()}
                                     projects={this.props.projects}
                                     selectProject={this.selectProject}
@@ -144,7 +144,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
                         <SwaggerPathList swagger={tmpSwagger}
                                          pathTagsPK={currentPathTagsPK}
                                          pathTags={currentPathTags}
-                                         activeTag={this.state.activeTag||""}
+                                         activeTag={this.state.activeTag||''}
                                          pathRecords={this.props.currentPathRecords}
                                          getPathRecords={(path)=>{this.props.getPathRecords(this.props.selectedProject,path)}}
                                          selectTag={(activeTag)=>{this.setState({activeTag})}}
@@ -167,7 +167,7 @@ const mapStateToProps = (state: any): ApiDocumentStateProps => {
             .values<DtoProject>()
             .sortBy('name')
             .value()
-            .map(t => ({ id: t.id ? t.id : '', name: t.name ? t.name : '' ,swaggerUrl:t.swaggerUrl||""}));
+            .map(t => ({ id: t.id ? t.id : '', name: t.name ? t.name : '' ,swaggerUrl:t.swaggerUrl||''}));
     }
     return {
         ...state,
@@ -187,12 +187,12 @@ const mapDispatchToProps = (dispatch: Dispatch<any>): ApiDocumentDispatchProps =
         resizeLeftPanel: (width) => dispatch(actionCreator(ResizeLeftPanelType, width)),
         collapsedLeftPanel: (collapsed) => dispatch(actionCreator(UpdateLeftPanelType, collapsed)),
         selectProject: projectId => {
-            dispatch(actionCreator(SelectedProjectChangedSwaggerType, projectId))
-            dispatch(actionCreator(SelectedProjectChangedType, projectId))
+            dispatch(actionCreator(SelectedProjectChangedSwaggerType, projectId));
+            dispatch(actionCreator(SelectedProjectChangedType, projectId));
             dispatch(actionCreator(SwaggerGetAllPathTagType, projectId))
         },
         changeProgress:(projectId,methodPath,targetId)=>{
-            console.log(projectId,methodPath,targetId)
+            console.log(projectId,methodPath,targetId);
             dispatch(actionCreator(SwaggerChangerProgressType, {projectId,methodPath,targetId}))
         },
         getPathTagProgress:(projectId)=>{
