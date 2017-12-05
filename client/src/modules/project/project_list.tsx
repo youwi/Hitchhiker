@@ -59,7 +59,8 @@ const createDefaultProject = (user: DtoUser) => {
         name: newProjectName,
         owner: user,
         members: [user],
-        swaggerUrl:""
+        swaggerUrl:"",
+        shared:false
     };
 };
 

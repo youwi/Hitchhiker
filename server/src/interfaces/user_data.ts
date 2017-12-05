@@ -14,6 +14,8 @@ export interface UserData {
 
     projects: _.Dictionary<Project>;
 
+    sharedProjects:_.Dictionary<Project>;
+
     environments: _.Dictionary<Environment[]>;
 
     schedules: _.Dictionary<DtoSchedule>;

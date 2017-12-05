@@ -20,6 +20,8 @@ export interface DtoProject {
 
     isMe?: boolean;
 
+    shared?: boolean;
+
     owner: Partial<DtoUser>;
 
     createDate?: Date;

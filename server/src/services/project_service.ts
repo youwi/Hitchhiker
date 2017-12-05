@@ -80,6 +80,33 @@ export class ProjectService {
             .getMany();
     }
 
+    /**
+     * shared project  do not need Invite members
+     * @param {boolean} needOwner
+     * @param {boolean} needCollection
+     * @param {boolean} needEnv
+     * @return {Promise<Project[]>}
+     */
+    static async getSharedProjects( needOwner: boolean = true, needCollection: boolean = true, needEnv: boolean = false): Promise<Project[]> {
+
+        const connection = await ConnectionManager.getInstance();
+
+        let rep = connection.getRepository(Project).createQueryBuilder('project').leftJoinAndSelect('project.localhosts', 'localhost');
+        if (needCollection) {
+            rep = rep.leftJoinAndSelect('project.collections', 'collection');
+        }
+        if (needOwner) {
+            rep = rep.leftJoinAndSelect('project.owner', 'owner');
+        }
+        if (needEnv) {
+            rep = rep.leftJoinAndSelect(`project.environments`, 'environment');
+        }
+
+        return await rep.where('1=1')
+            .andWhere("shared=1")
+            .getMany();
+    }
+
     static async createProject(dtoProject: DtoProject, ownerId: string): Promise<ResObject> {
         const connection = await ConnectionManager.getInstance();
         const project = ProjectService.fromDto(dtoProject, ownerId);
@@ -108,7 +135,7 @@ export class ProjectService {
         await connection.getRepository(Project)
             .createQueryBuilder('project')
             .where('id=:id', { id: dtoProject.id })
-            .update({ name: dtoProject.name, note: dtoProject.note,swaggerUrl:dtoProject.swaggerUrl })
+            .update({ name: dtoProject.name, note: dtoProject.note,swaggerUrl:dtoProject.swaggerUrl,shared:dtoProject.shared })
             .execute();
 
         return { success: true, message: Message.projectSaveSuccess };

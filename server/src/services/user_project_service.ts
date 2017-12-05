@@ -70,6 +70,8 @@ export class UserProjectService {
             projectData: _.pick(ProjectDataService.instance._pDataFiles, _.keys(projects)) as _.Dictionary<_.Dictionary<ProjectData>>
         };
 
+        const sharedProjects= _.keyBy(await ProjectService.getSharedProjects(),"id")
+
         return {
             collection: {
                 collections: _.keyBy<DtoCollection>(collections.map(c => CollectionService.toDto(c)), 'id'),
@@ -77,6 +79,7 @@ export class UserProjectService {
             },
             user,
             projects,
+            sharedProjects,
             environments,
             schedules,
             stresses,

@@ -36,11 +36,14 @@ export class Project {
     @Column({ default: false })
     isMe: boolean;
 
+    @Column({ default: false })
+    shared: boolean;
+
     @JoinColumn()
     @OneToOne(type => User)
     owner: User;
 
-    @Column()
+    @Column({nullable: true})
     swaggerUrl?:string;
 
     @CreateDateColumn()

@@ -18,7 +18,7 @@ import { localhost } from '../../common/constants';
 import { StringUtil } from '../../utils/string_util';
 import { ProjectFileType } from '../../common/custom_type';
 import { ProjectFiles } from '../../../../server/src/interfaces/dto_project_data';
-import { Table, Modal, Input, Icon } from 'antd';
+import { Table, Modal, Input, Icon ,Checkbox} from 'antd';
 
 const { Content, Sider } = Layout;
 
@@ -126,6 +126,11 @@ class Project extends React.Component<ProjectProps, ProjectState> {
          if(obj!=null) return obj.swaggerUrl;
          else return ""
     }
+    getCurrentProjectShared=()=>{
+        let obj=this.props.projects.find(t => t.id === this.props.activeProject)
+        if(obj!=null) return obj.shared;
+        else return false
+    }
     changeSwaggerUrl=(ev)=>{
         let project=   this.getSelectedProject()
         let v=""
@@ -136,6 +141,19 @@ class Project extends React.Component<ProjectProps, ProjectState> {
         }
         if(project!=null){
             project.swaggerUrl=v
+            this.props.updateProject(project)
+        }
+    }
+    changeProjectSharedKey=(ev)=>{
+        let project=   this.getSelectedProject()
+        let v=false
+        if(ev.constructor==Boolean){
+            v=ev
+        }else if(ev.target&&ev.target.checked!=null){
+            v=ev.target.checked
+        }
+        if(project!=null){
+            project.shared=v
             this.props.updateProject(project)
         }
     }
@@ -198,8 +216,8 @@ class Project extends React.Component<ProjectProps, ProjectState> {
                         editEnv={editEnv}
                     />
                     <div>
-                        <div style={{height: 12}}></div>
-                        <div className="project-title">Swagger URL</div>
+                        <div style={{height: 12}}/>
+                        <div className="project-title">Swagger URL <Checkbox style={{float:"right"}} checked={this.getCurrentProjectShared()} onChange={this.changeProjectSharedKey}>share</Checkbox></div>
                         <Input style={{width:'100%'}} addonAfter={<Icon type="check" />} value={this.getCurrentProjectSwaggerUrl()} onChange={this.changeSwaggerUrl}/>
                     </div>
                 </Content>
