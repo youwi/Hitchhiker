@@ -77,6 +77,7 @@ export class ProjectService {
 
         return await rep.where('1=1')
             .andWhereInIds(ids.map(id => ({ id })))
+            .orWhere("shared=1")
             .getMany();
     }
 

@@ -79,10 +79,12 @@ export function projectState(state: ProjectState = projectDefaultValue, action: 
         }
         case SwaggerGetAllPathTagOKType:{
             let currentPathTagsPK=state.currentPathTagsPK
+            if(action.value.pathTags==null){
+                return {...state}
+            }
             action.value.pathTags.map((pt)=>{
                 currentPathTagsPK[pt.methodPath]=pt.targetId
             })
-            // merget as dict
             let dict=action.value.pathTags.reduce((pre,curr) => ({ ...pre, [curr.methodPath]: curr }), {});
             return {...state,currentPathTagsPK,currentPathTags:dict}
         }
