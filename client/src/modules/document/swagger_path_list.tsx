@@ -3,7 +3,7 @@ import {DtoStress} from '../../../../server/src/interfaces/dto_stress';
 import {SelectParam} from 'antd/lib/menu';
 import {DtoUser} from '../../../../server/src/interfaces/dto_user';
 import {StringUtil} from '../../utils/string_util';
-import {Tooltip, Button, Menu} from 'antd';
+import {Tooltip, Button, Menu,Popconfirm,Modal,Popover} from 'antd';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import {NotificationMode} from '../../common/notification_mode';
 import {noEnvironment, newStressName} from '../../common/constants';
@@ -25,14 +25,17 @@ interface SwaggerListProps {
     activeTag: any;
     pathTags:any;
     pathTagsPK:any;
+    pathRecords:any;
     selectTag(tagName: string);
     changeProgress(methodPath,toInt:number);
+    getPathRecords(path:string)
 }
 
 interface SwaggerListState {
     searchText:string;
     multiTags:string[];
     toggleState:any;
+    visible:boolean
 }
 
 const createDefaultStress: (user: DtoUser) => DtoStress = (user: DtoUser) => {
@@ -61,12 +64,16 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
         this.state = {
             searchText:"",
             multiTags:[],
-            toggleState:{}
+            toggleState:{},
+            visible:false
         };
     }
 
     // public shouldComponentUpdate(nextProps: SwaggerListProps, nextState: SwaggerListState) {
     //     return !_.isEqual(nextProps, this.props) || !_.isEqual(nextState, this.state);
+    //
+    // }
+    // public componentWillReceiveProps(nextProps,props){
     //
     // }
 
@@ -130,6 +137,12 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
         }
         return false
     }
+    //      <Popconfirm placement="topLeft" title={text} onConfirm={confirm} okText="Yes" cancelText="No">
+    // <Button>TL</Button>
+    // </Popconfirm>
+    hideModal=()=>{
+        this.setState({visible:false})
+    }
     buildTagsSpan=(methodPath)=>{
         let BA=['...','0','½','¾','OK']
         let pathTags=this.props.pathTags
@@ -138,10 +151,16 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
         }
         let tagShow=BA[pathTags[methodPath].targetId||0]
         return <span key={methodPath} className="h-tag h-tag-sp" onClick={(e)=>this.changeProgress(e,methodPath,pathTags[methodPath].targetId)}>
-             <Tooltip placement="top" title={pathTags[methodPath].createBy}>
+                <Tooltip placement="top" title={pathTags[methodPath].createBy}>
                      {tagShow}
-                  </Tooltip>
+                </Tooltip>
             </span>
+    }
+    buildPathRecord=()=>{
+
+        let out= <Popconfirm placement="topLeft" title={""}>
+            <Icon type="select" />
+        </Popconfirm>
     }
     changeProgress=(e,methodPath,sr)=>{
         if(e.target){
@@ -152,6 +171,13 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
         }else{
             this.props.changeProgress(methodPath,sr+1)
         }
+    }
+    openDialogPathRecords=(e,path:string)=>{
+        if(e.target){
+            e.stopPropagation()
+        }
+        this.props.getPathRecords(path)
+        this.setState({visible:true})
     }
 
 
@@ -209,8 +235,8 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                     if(swagger.paths[path][method].tags && swagger.paths[path][method].tags.indexOf(this.state.searchText)>-1) return true
 
                                     return false;
-                                }).map(method =>
-                                    (<li className="path-li path-li-post" key={method + path} >
+                                }).map((method,index) =>
+                                    (<li className="path-li path-li-post" key={method + path}  >
                                             <div className="path-head" onClick={(e)=>this.toggleDetail(method+path)}>
                                                 <span className="path-method">{method}</span>
                                                 <span className="path-name">{path}</span>
@@ -221,6 +247,11 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                                     {this.buildTagsSpan(method+":"+path)}
 
                                                 </span>
+                                                <Popover trigger="click" content={ Object.keys(this.props.pathRecords).map((key,index)=><span key={index}>{this.props.pathRecords[key].name}</span>)} title="All Request">
+                                                    <span className="path-name" onClick={(e)=>this.openDialogPathRecords(e,path)}> <Icon type="select" /></span>
+                                                </Popover>
+
+
                                             </div>
 
                                             {
@@ -231,10 +262,10 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                                                         <h3>Request Body</h3>
                                                         <div className="path-info-body">
                                                             {
-                                                                swagger.paths[path][method].parameters.map((parameter)=>{
-                                                                    if(parameter.in=="body") return  <SwaggerSchemaView definitions={swagger.definitions} schema={parameter.schema} />
-                                                                    if(parameter.in=='path') return  <div/>
-                                                                    return <div></div>
+                                                                swagger.paths[path][method].parameters.map((parameter,index)=>{
+                                                                    if(parameter.in=="body") return  <SwaggerSchemaView key={index} definitions={swagger.definitions} schema={parameter.schema} />
+                                                                    if(parameter.in=='path') return  <div key={"path"+index}/>
+                                                                    return <div key={"dev"+index}/>
 
                                                                 })
                                                             }
@@ -257,9 +288,24 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
                     }
 
                 </div>
+                {/*<Modal*/}
+                    {/*title="Request"*/}
+                    {/*visible={this.state.visible}*/}
+                    {/*onOk={this.hideModal}*/}
+                    {/*onCancel={this.hideModal}*/}
+                    {/*okText="OK"*/}
+                    {/*cancelText="Close"*/}
+                {/*>{*/}
+                    {/*Object.keys(this.props.pathRecords).map((key,index)=>{*/}
+                        {/*let obj=this.props.pathRecords[key]*/}
+                        {/*return <span key={index}>{obj.name}</span>*/}
+                    {/*})*/}
+                {/*}*/}
+                {/*</Modal>*/}
             </div>
         );
     }
 }
 
 export default SwaggerPathList;
+// key={StringUtil.generateUID()}

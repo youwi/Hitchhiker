@@ -35,7 +35,7 @@ export default class SwaggerController extends BaseController {
         return await SwaggerService.getAllPathTags(projectId);
     }
     @GET('/swagger/pathRecords')
-    async getAllPathRecordsByUrl(ctx: Koa.Context, @QueryParam("url") url: string) {
+    async getAllPathRecordsByUrl(ctx: Koa.Context, @QueryParam("path") url: string) {
         return await SwaggerService.getAllPathRecords(url);
     }
 

@@ -3,7 +3,10 @@ import { LoginSuccessType, SyncUserDataSuccessType } from '../action/user';
 import * as _ from 'lodash';
 import { ProjectState, projectDefaultValue } from '../state/project';
 import { ProjectFileTypes } from '../common/custom_type';
-import {SelectedProjectChangedGotSwaggerType, SelectedProjectChangedSwaggerType, SwaggerGetAllPathTagOKType, SwaggerGetAllPathTagType, SwaggerMergePathTagType} from "../action/swagger";
+import {
+    SelectedProjectChangedGotSwaggerType, SelectedProjectChangedSwaggerType, SwaggerGetAllPathRecordsOKType, SwaggerGetAllPathRecordsType, SwaggerGetAllPathTagOKType, SwaggerGetAllPathTagType,
+    SwaggerMergePathTagType
+} from "../action/swagger";
 
 export function projectState(state: ProjectState = projectDefaultValue, action: any): ProjectState {
     switch (action.type) {
@@ -56,6 +59,16 @@ export function projectState(state: ProjectState = projectDefaultValue, action: 
             }
             else
                 return {... state,currentSwagger:{paths:[],tags:[]}}
+        }
+        case SwaggerGetAllPathRecordsOKType:{
+            if(action.value.records && action.value.records.length>0){
+                let dict=action.value.records.reduce((pre,curr) => ({ ...pre, [curr.collectionId]: curr }), {});
+                return {...state,currentPathRecords:dict}
+            }
+            return {...state,currentPathRecords:{}}
+        }
+        case SwaggerGetAllPathRecordsType:{
+            return {...state}
         }
         case SwaggerMergePathTagType:{
             let currentPathTagsPK=state.currentPathTagsPK

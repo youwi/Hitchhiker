@@ -15,7 +15,7 @@ import SwaggerTagList from "./swagger_tag_list";
 import {SelectedProjectChangedType,SelectedProjectTagChangedType} from "../../action/collection";
 import './swagger_style.less';
 import SwaggerPathList from "./swagger_path_list";
-import {InitUpdateSwagger, SelectedProjectChangedSwaggerType, SwaggerChangerProgressType, SwaggerGetAllPathTagType, swaggerGetProjectAllPathTag} from "../../action/swagger";
+import {InitUpdateSwagger, SelectedProjectChangedSwaggerType, SwaggerChangerProgressType, SwaggerGetAllPathRecordsType, SwaggerGetAllPathTagType, swaggerGetProjectAllPathTag} from "../../action/swagger";
 import {DtoProject} from "../../../../server/src/interfaces/dto_project";
 import * as _ from 'lodash';
 
@@ -32,6 +32,7 @@ interface ApiDocumentStateProps {
     currentPathTagsPK:any;
     currentPathTags:any;
     currentRunStressId: string;
+    currentPathRecords:any;
 
 
     collections: _.Dictionary<DtoCollection>;
@@ -51,6 +52,7 @@ interface ApiDocumentDispatchProps {
     refreshSwagger(url);
     changeProgress(projectId,methodPath,targetId);
     getPathTagProgress(projectId:string);
+    getPathRecords(projectId:string,path:string)
 }
 
 type ApiDocumentProps = ApiDocumentStateProps & ApiDocumentDispatchProps;
@@ -143,6 +145,8 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
                                          pathTagsPK={currentPathTagsPK}
                                          pathTags={currentPathTags}
                                          activeTag={this.state.activeTag||""}
+                                         pathRecords={this.props.currentPathRecords}
+                                         getPathRecords={(path)=>{this.props.getPathRecords(this.props.selectedProject,path)}}
                                          selectTag={(activeTag)=>{this.setState({activeTag})}}
                                          changeProgress={this.changeProgress}
                         />
@@ -155,7 +159,7 @@ class ApiDocument extends React.Component<ApiDocumentProps, ApiDocumentState> {
 
 const mapStateToProps = (state: any): ApiDocumentStateProps => {
     const { leftPanelWidth, collapsed } = state.uiState.appUIState;
-    const {projects,currentSwagger,currentPathTagsPK,currentPathTags}=state.projectState;
+    const {projects,currentSwagger,currentPathTagsPK,currentPathTags,currentPathRecords}=state.projectState;
     const {selectedProject } = state.collectionState;
     let arr;
     if(projects.constructor==Object){
@@ -171,6 +175,7 @@ const mapStateToProps = (state: any): ApiDocumentStateProps => {
         leftPanelWidth,
         projects:arr,
         collapsed,
+        currentPathRecords,
         currentPathTags,
         currentPathTagsPK, // require("./..json")
         tmpSwagger:currentSwagger  //||require("./swagger-example.json")
@@ -192,6 +197,9 @@ const mapDispatchToProps = (dispatch: Dispatch<any>): ApiDocumentDispatchProps =
         },
         getPathTagProgress:(projectId)=>{
             dispatch(actionCreator(SwaggerGetAllPathTagType, projectId))
+        },
+        getPathRecords:(projectId:string,path:string)=>{
+            dispatch(actionCreator(SwaggerGetAllPathRecordsType, {projectId,path}))
         },
         selectProjectTag: (projectId,tagName) => dispatch(actionCreator(SelectedProjectTagChangedType, {projectId,tagName})),
         refreshSwagger:(url )=>dispatch(actionCreator(InitUpdateSwagger,{url}))

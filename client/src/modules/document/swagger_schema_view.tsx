@@ -62,7 +62,7 @@ class SwaggerSchemaView extends React.Component<SwaggerParamProps, SwaggerParamS
                          <i className="h-icon-link link"/>
                          <div className="param-container">
                              {
-                                 Object.keys(schema.properties).map(key=><div className="param-name">
+                                 Object.keys(schema.properties).map((key,index)=><div className="param-name" key={index}>
                                      <span className="param-key">{key}</span>
                                      <span className="param-split">{splitTag}</span>
                                      <span className="param-type">{ schema.properties[key].type}</span>

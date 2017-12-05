@@ -14,6 +14,8 @@ export const SwaggerGetAllPathTagType="get All  PATH_TAG  progress object"
 export const SwaggerGetAllPathTagOKType="get All  PATH_TAG  progress object OK "
 export const SwaggerMergePathTagType="merge  PATH_TAG progress to local"
 
+export const SwaggerGetAllPathRecordsType=" to get PATH_RECORDS list for current path"
+export const SwaggerGetAllPathRecordsOKType="got PATH_RECORDS list for current path"
 
 export function* initSwaggerNow() {
     yield takeEvery(InitUpdateSwagger, function* (action: any) {
@@ -25,6 +27,14 @@ export function* initSwaggerNow() {
     });
 }
 
+
+export function* swaggerGetProjectAllPathRecords() {
+    yield takeEvery(SwaggerGetAllPathRecordsType, function* (action: any) {
+        let request=yield call(RequestManager.get,Urls.getUrl(`swagger/pathRecords?projectId=${action.value.projectId}&path=${action.value.path}`));
+        let out=yield request.json()
+        yield put(actionCreator(SwaggerGetAllPathRecordsOKType, { records:out.records }));
+    });
+}
 
 export function* swaggerGetProjectAllPathTag() {
     yield takeEvery(SwaggerGetAllPathTagType, function* (action: any) {

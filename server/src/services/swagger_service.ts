@@ -133,11 +133,12 @@ export class SwaggerService {
     // SQL injection @unsafe i know
     static async getAllPathRecords(url: string) {
         const connection = await ConnectionManager.getInstance();
+        console.log(` select * from record where url like '%${url}%' GROUP BY  collectionId`)
         const cache=await connection.getRepository(PathTag).query(` select * from record where url like '%${url}%' GROUP BY  collectionId`)
         if(cache!=null && cache.length>0){
             return { success: true, records:cache};
         }else
-            return { success: false, message: "PathTag not Found"};
+            return { success: false, message: "PathRecords not Found"};
 
     }
 }

@@ -9,7 +9,7 @@ import { storeLocalData, fetchLocalData } from './local_data';
 import { deleteSchedule, saveSchedule, runSchedule } from './schedule';
 import { saveStress, deleteStress, runStress } from './stress';
 import { GlobalVar } from '../utils/global_var';
-import {changeSwagger, initSwaggerNow, swaggerGetProjectAllPathTag, swaggerPathProgressUpdate} from "./swagger"
+import {changeSwagger, initSwaggerNow, swaggerGetProjectAllPathRecords, swaggerGetProjectAllPathTag, swaggerPathProgressUpdate} from "./swagger"
 
 export const SyncType = 'sync';
 
@@ -70,6 +70,7 @@ export function* rootSaga() {
         spawn(runStress),
         spawn(syncUserData),
         spawn(initSwaggerNow),
+        spawn(swaggerGetProjectAllPathRecords),
         spawn(changeSwagger),
         spawn(sync)
     ];
