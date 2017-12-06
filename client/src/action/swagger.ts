@@ -5,18 +5,19 @@ import { Urls } from '../utils/urls';
 import RequestManager from '../utils/request_manager';
 
 
-export const InitUpdateSwagger="initSwagger by url"
-export const SelectedProjectChangedSwaggerType="select project then swagger will change"
-export const SelectedProjectChangedGotSwaggerType="select project then swagger now update local"
+export const InitUpdateSwagger="initSwagger by url";
+export const SelectedProjectChangedSwaggerType="select project then swagger will change";
+export const SelectedProjectChangedGotSwaggerType="select project then swagger now update local";
 
-export const SwaggerChangerProgressType="change PATH_TAG's  progress object "
-export const SwaggerGetAllPathTagType="get All  PATH_TAG  progress object"
-export const SwaggerGetAllPathTagOKType="get All  PATH_TAG  progress object OK "
-export const SwaggerMergePathTagType="merge  PATH_TAG progress to local"
+export const SwaggerChangerProgressType="change PATH_TAG's  progress object ";
+export const SwaggerGetAllPathTagType="get All  PATH_TAG  progress object";
+export const SwaggerGetAllPathTagOKType="get All  PATH_TAG  progress object OK ";
+export const SwaggerMergePathTagType="merge  PATH_TAG progress to local";
 
-export const SwaggerGetAllPathRecordsType=" to get PATH_RECORDS list for current path"
-export const SwaggerGetAllPathRecordsOKType="got PATH_RECORDS list for current path"
+export const SwaggerGetAllPathRecordsType=" to get PATH_RECORDS list for current path";
+export const SwaggerGetAllPathRecordsOKType="got PATH_RECORDS list for current path";
 
+export const SelectedCollectionChangedType='select collection ,will give ID';
 export function* initSwaggerNow() {
     yield takeEvery(InitUpdateSwagger, function* (action: any) {
         const { url } = action.value;

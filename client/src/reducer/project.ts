@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import { ProjectState, projectDefaultValue } from '../state/project';
 import { ProjectFileTypes } from '../common/custom_type';
 import {
+    SelectedCollectionChangedType,
     SelectedProjectChangedGotSwaggerType, SelectedProjectChangedSwaggerType, SwaggerGetAllPathRecordsOKType, SwaggerGetAllPathRecordsType, SwaggerGetAllPathTagOKType, SwaggerGetAllPathTagType,
     SwaggerMergePathTagType
 } from "../action/swagger";
@@ -49,6 +50,7 @@ export function projectState(state: ProjectState = projectDefaultValue, action: 
         case SelectedProjectChangedSwaggerType:{
             return {...state}
         }
+
         case SelectedProjectChangedGotSwaggerType:{
             if(action.value.swagger!=null){
                 if(action.value.swagger.swagger!=null){

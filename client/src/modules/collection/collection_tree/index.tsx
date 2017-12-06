@@ -20,7 +20,7 @@ import { newCollectionName, allProject } from '../../../common/constants';
 import RecordTimeline from '../../../components/record_timeline';
 import './style/index.less';
 import { ShowTimelineType, CloseTimelineType } from '../../../action/ui';
-import {SelectedProjectChangedSwaggerType} from "../../../action/swagger";
+import {SelectedCollectionChangedType, SelectedProjectChangedSwaggerType} from "../../../action/swagger";
 
 const SubMenu = Menu.SubMenu;
 const MenuItem = Menu.Item;
@@ -38,6 +38,8 @@ interface CollectionListStateProps {
     openKeys: string[];
 
     selectedProject: string;
+
+    selectedCollectionId: string;
 
     timelineRecord?: DtoRecord;
 
@@ -71,6 +73,8 @@ interface CollectionListDispatchProps {
     showTimeLine(id: string);
 
     closeTimeLine();
+
+    selectCollection(collectionId: string);
 }
 
 type CollectionListProps = CollectionListStateProps & CollectionListDispatchProps;
@@ -134,25 +138,25 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
         if (record && record.category === RecordCategory.record) {
             this.props.activeRecord(record);
         }
-    }
+    };
 
     private changeFolderName = (folder: DtoRecord, name: string) => {
         if (name.trim() !== '' && name !== folder.name) {
             folder.name = name;
             this.props.updateRecord(folder);
         }
-    }
+    };
 
     private changeCollectionName = (collection: DtoCollection, name: string) => {
         if (name.trim() !== '' && name !== collection.name) {
             collection.name = name;
             this.props.updateCollection(collection);
         }
-    }
+    };
 
     private moveRecordToFolder = (record: DtoRecord, collectionId: string, folderId: string) => {
         this.props.moveRecord({ ...record, pid: folderId, collectionId });
-    }
+    };
 
     private moveToCollection = (record: DtoRecord, collectionId: string) => {
         this.props.moveRecord({ ...record, collectionId, pid: '' });
@@ -161,7 +165,7 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
                 this.props.moveRecord({ ...r, collectionId });
             });
         }
-    }
+    };
 
     private getProjectMenu = () => {
         const projects = this.props.projects;
@@ -171,15 +175,15 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
                 {projects.map(t => <Menu.Item key={t.id}>{t.name}</Menu.Item>)}
             </Menu>
         );
-    }
+    };
 
     private getCurrentProject = () => {
         return this.props.projects.find(t => t.id === this.props.selectedProject) || { id: allProject, name: allProject };
-    }
+    };
 
     private addCollection = () => {
         this.setState({ ...this.state, isProjectSelectedDlgOpen: true }, () => this.newCollectionNameRef && this.newCollectionNameRef.focus());
-    }
+    };
 
     private createCollection = () => {
         if (!this.state.selectedProjectInDlg) {
@@ -296,6 +300,25 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
             </Modal>
         );
     }
+    removeByValue=(arr, val)=> {
+        for(var i=0; i<arr.length; i++) {
+            if(arr[i] == val) {
+                arr.splice(i, 1);
+                break;
+            }
+        }
+    }
+    toggleSuiteView=(openKeys:string[])=>{
+        this.props.openKeysChanged(openKeys);
+        let arrA=this.props.openKeys.length>openKeys.length?[...this.props.openKeys]:[...openKeys];
+        let arrB=this.props.openKeys.length>openKeys.length?[...openKeys]:[...this.props.openKeys];
+
+        if(arrA.length>arrB.length){
+            arrB.map(a=>this.removeByValue(arrA,a))
+        }
+        let selectedCollectionId=arrA[0];
+        this.props.selectCollection(selectedCollectionId);
+    }
 
     render() {
         const { collections, records, activeKey, openKeys, deleteCollection, openKeysChanged, activeRecord } = this.props;
@@ -319,7 +342,7 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
                     <PerfectScrollbar>
                         <Menu
                             className="collection-tree"
-                            onOpenChange={openKeysChanged}
+                            onOpenChange={this.toggleSuiteView}
                             mode="inline"
                             inlineIndent={0}
                             openKeys={openKeys}
@@ -371,7 +394,7 @@ const makeMapStateToProps: MapStateToPropsFactory<any, any> = (initialState: any
     const getCollections = getDisplayCollectionSelector();
 
     const mapStateToProps: (state: State) => CollectionListStateProps = state => {
-        const { collectionsInfo, selectedProject } = state.collectionState;
+        const { collectionsInfo, selectedProject,selectedCollectionId } = state.collectionState;
         const { record, isShow } = state.uiState.timelineState;
 
         return {
@@ -380,6 +403,7 @@ const makeMapStateToProps: MapStateToPropsFactory<any, any> = (initialState: any
             activeKey: state.displayRecordsState.activeKey,
             projects: getProjects(state),
             openKeys: state.collectionState.openKeys,
+            selectedCollectionId,
             selectedProject,
             timelineRecord: record,
             isTimelineDlgOpen: isShow
@@ -412,6 +436,7 @@ const mapDispatchToProps = (dispatch: Dispatch<{}>): CollectionListDispatchProps
             dispatch(actionCreator(SelectedProjectChangedType, projectId))
             dispatch(actionCreator(SelectedProjectChangedSwaggerType, projectId))
         },
+        selectCollection:collectionId=>{dispatch(actionCreator(SelectedCollectionChangedType, collectionId))},
         showTimeLine: id => dispatch(actionCreator(ShowTimelineType, id)),
         closeTimeLine: () => dispatch(actionCreator(CloseTimelineType))
     };

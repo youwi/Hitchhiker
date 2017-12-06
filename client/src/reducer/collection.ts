@@ -8,6 +8,7 @@ import { DtoCollectionWithRecord } from '../../../server/src/interfaces/dto_coll
 import { RequestStatus } from '../common/request_status';
 import { LoginSuccessType } from '../action/user';
 import { ConflictType } from '../common/conflict_type';
+import {SelectedCollectionChangedType} from "../action/swagger";
 
 export function collectionState(state: CollectionState = collectionDefaultValue, action: any): CollectionState {
     switch (action.type) {
@@ -87,6 +88,9 @@ export function collectionState(state: CollectionState = collectionDefaultValue,
             Reflect.deleteProperty(collections, collectionId);
             Reflect.deleteProperty(records, collectionId);
             return { ...state, collectionsInfo: { ...state.collectionsInfo, collections, records } };
+        }
+        case SelectedCollectionChangedType:{
+            return {...state,selectedCollectionId:action.value}
         }
         default: return state;
     }

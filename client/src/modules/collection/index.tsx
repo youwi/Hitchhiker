@@ -7,7 +7,7 @@ import ReqResPanel from './req_res_panel';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import { actionCreator } from '../../action/index';
 import { ResizeLeftPanelType, UpdateLeftPanelType } from '../../action/ui';
-
+import ReqSuiteView from "./req_suite_view/req_suite_view"
 const { Content, Sider } = Layout;
 
 interface CollectionStateProps {
@@ -17,6 +17,8 @@ interface CollectionStateProps {
     leftPanelWidth: number;
 
     activeModule: string;
+
+    selectedCollectionId:string;
 }
 
 interface CollectionDispatchProps {
@@ -52,20 +54,26 @@ class Collection extends React.Component<CollectionProps, CollectionState> {
                 <Splitter resizeCollectionPanel={this.props.resizeLeftPanel} />
                 <Content style={{ marginTop: 4 }}>
                     <PerfectScrollbar>
-                        <ReqResPanel />
+                        {
+                            this.props.selectedCollectionId!=""?<ReqSuiteView/>:<ReqResPanel />
+                        }
                     </PerfectScrollbar>
                 </Content>
             </Layout>
         );
     }
 }
+import { State } from '../../state';
 
-const mapStateToProps = (state: any): CollectionStateProps => {
+const mapStateToProps = (state: State): CollectionStateProps => {
     const { leftPanelWidth, collapsed, activeModule } = state.uiState.appUIState;
+    const { selectedCollectionId } = state.collectionState;
+
     return {
         leftPanelWidth,
         collapsed,
-        activeModule
+        activeModule,
+        selectedCollectionId
     };
 };
 

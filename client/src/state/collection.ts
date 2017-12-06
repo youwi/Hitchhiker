@@ -41,6 +41,8 @@ export interface CollectionState {
 
     selectedProject: string;
 
+    selectedCollectionId:string;
+
     fetchCollectionState: RequestState;
 }
 
@@ -88,6 +90,7 @@ export const collectionDefaultValue: CollectionState = {
     fetchCollectionState: requestStateDefaultValue,
     openKeys: [],
     selectedProject: allProject,
+    selectedCollectionId:"",
     collectionsInfo: {
         collections: {},
         records: {}
