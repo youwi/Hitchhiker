@@ -414,7 +414,10 @@ const makeMapStateToProps: MapStateToPropsFactory<any, any> = (initialState: any
 
 const mapDispatchToProps = (dispatch: Dispatch<{}>): CollectionListDispatchProps => {
     return {
-        activeRecord: (record) => dispatch(actionCreator(ActiveRecordType, record)),
+        activeRecord: (record) => {
+            dispatch(actionCreator(ActiveRecordType, record));
+            dispatch(actionCreator(SelectedCollectionChangedType, ""));
+        },
         deleteRecord: (id, records) => {
             const record = records[id];
             if (record.category === RecordCategory.folder) {
