@@ -310,14 +310,22 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
     }
     toggleSuiteView=(openKeys:string[])=>{
         this.props.openKeysChanged(openKeys);
-        let arrA=this.props.openKeys.length>openKeys.length?[...this.props.openKeys]:[...openKeys];
-        let arrB=this.props.openKeys.length>openKeys.length?[...openKeys]:[...this.props.openKeys];
-
-        if(arrA.length>arrB.length){
-            arrB.map(a=>this.removeByValue(arrA,a))
+        if(openKeys.length<this.props.openKeys.length){
+            let arrA=[...this.props.openKeys];
+            let arrB=[...openKeys];
+            arrB.map(a => this.removeByValue(arrA, a))
+            this.props.selectCollection(arrA[0]);
+        }else{
+            this.props.selectCollection(""); //EMPTY
         }
-        let selectedCollectionId=arrA[0];
-        this.props.selectCollection(selectedCollectionId);
+        // let arrA=this.props.openKeys.length>openKeys.length?[...this.props.openKeys]:[...openKeys];
+        // let arrB=this.props.openKeys.length>openKeys.length?[...openKeys]:[...this.props.openKeys];
+        //
+        // if(arrA.length>arrB.length){
+        //     arrB.map(a=>this.removeByValue(arrA,a))
+        // }
+        //let selectedCollectionId=arrA[0];
+        //this.props.selectCollection(selectedCollectionId);
     }
 
     render() {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect, Dispatch } from 'react-redux';
 
-import { Tabs, Badge, Modal, Button } from 'antd';
+import { Tabs, Badge, Modal, Button ,Card,Row,Col} from 'antd';
 import * as _ from 'lodash';
 import './style/index.less';
 import { RecordState } from '../../../state/collection';
@@ -12,10 +12,11 @@ import { State } from '../../../state/index';
 import { ResizeResHeightType } from '../../../action/ui';
 import { newRecordFlag } from '../../../common/constants';
 import { ConflictType } from '../../../common/conflict_type';
+import { DtoCollection } from '../../../../../server/src/interfaces/dto_collection';
 
 interface ReqResPanelStateProps {
-
-
+    currentRecords:_.Dictionary<DtoRecord>;
+    currentCollection:DtoCollection;
 }
 
 interface ReqResPanelDispatchProps {
@@ -45,11 +46,25 @@ class ReqSuiteView extends React.Component<ReqResPanelProps, ReqResPanelState> {
         };
     }
     public render() {
-
+        let {currentRecords, currentCollection}=this.props
+        if(currentRecords==null) currentRecords={}
 
         return (
             <div className="request-tab" ref={ele => this.reqResPanel = ele}>
-               all in doing
+
+                <Row gutter={16}>
+                    <Col span={24}>
+                        <Card title={currentCollection.name} bordered={true}>Card content</Card>
+                    </Col>
+
+                </Row>
+                {
+                    Object.keys(currentRecords).map((key,i)=><Row gutter={16} key={i}>
+                        <Col span={24} >
+                            <Card title={currentRecords[key].name} bordered={true}>{currentRecords[key].url}</Card>
+                        </Col>
+                    </Row>)
+                }
             </div>
         );
     }
@@ -58,8 +73,13 @@ class ReqSuiteView extends React.Component<ReqResPanelProps, ReqResPanelState> {
 const mapStateToProps = (state: State): ReqResPanelStateProps => {
     const { activeKey, recordStates } = state.displayRecordsState;
     const { selectedProject, collectionsInfo,selectedCollectionId } = state.collectionState;
+    const { records,collections} =collectionsInfo
+    const currentRecords=records[selectedCollectionId]
+    const currentCollection=collections[selectedCollectionId]
 
     return {
+        currentRecords,
+        currentCollection
     };
 };
 
