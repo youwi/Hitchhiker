@@ -19,6 +19,8 @@ interface ItemWithMenuProps {
     disableMenu?: boolean;
 
     isLoading?: boolean;
+
+    toggleCollectionView?();
 }
 
 interface ItemWithMenuState {
@@ -115,6 +117,15 @@ class ItemWithMenu extends React.Component<ItemWithMenuProps, ItemWithMenuState>
                     }
                 </span>
                 {
+                    this.props.toggleCollectionView!=null?<Icon className={iconClassName}  type="layout"
+                        style={{marginRight:40,fontWeight:100, }}
+                        onClick={(e)=>{
+                        e.stopPropagation();
+                        console.log("----")
+                        if(this.props.toggleCollectionView!=null) this.props.toggleCollectionView();
+                        }}/>:null
+                }
+                {
                     disableMenu ? '' : (
                         <Dropdown onVisibleChange={this.onMenuVisibleChanged} overlay={menu} placement="bottomRight">
                             <Icon className={iconClassName} onClick={this.stopPropagation} type="ellipsis" />
@@ -127,3 +138,5 @@ class ItemWithMenu extends React.Component<ItemWithMenuProps, ItemWithMenuState>
 }
 
 export default ItemWithMenu;
+
+//float: "right", lineHeight:"60px", fontSize: "16px"

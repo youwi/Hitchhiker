@@ -308,6 +308,14 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
             }
         }
     }
+    toggleCollectionView=(collectionId: string)=>{
+        if(this.props.selectedCollectionId=="" ||this.props.selectedCollectionId!=collectionId)
+            this.props.selectCollection(collectionId);
+        else {
+            this.props.selectCollection("");
+        }
+        console.log(collectionId)
+    }
     toggleSuiteView=(openKeys:string[])=>{
         this.props.openKeysChanged(openKeys);
         if(openKeys.length<this.props.openKeys.length){
@@ -350,7 +358,7 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
                     <PerfectScrollbar>
                         <Menu
                             className="collection-tree"
-                            onOpenChange={this.toggleSuiteView}
+                            onOpenChange={this.props.openKeysChanged}
                             mode="inline"
                             inlineIndent={0}
                             openKeys={openKeys}
@@ -368,6 +376,7 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
                                             key={c.id}
                                             title={(
                                                 <CollectionItem
+                                                    toggleCollectionView={this.toggleCollectionView}
                                                     collection={{ ...c }}
                                                     recordCount={recordCount}
                                                     onNameChanged={(name) => this.changeCollectionName(c, name)}

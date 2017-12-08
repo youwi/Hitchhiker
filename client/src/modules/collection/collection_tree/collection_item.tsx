@@ -26,6 +26,8 @@ interface CollectionItemProps {
     moveToCollection(record: DtoRecord, collectionId?: string);
 
     shareCollection(collectionId: string);
+
+    toggleCollectionView(collectionId: string);
 }
 
 interface CollectionItemState {
@@ -135,7 +137,9 @@ class CollectionItem extends React.Component<CollectionItemProps, CollectionItem
                 onDragLeave={this.dragLeave}
                 onDrop={this.drop}
             >
+
                 <ItemWithMenu
+                    toggleCollectionView={()=> this.props.toggleCollectionView(this.props.collection.id)}
                     ref={ele => this.itemWithMenu = ele}
                     onNameChanged={this.props.onNameChanged}
                     icon={<Icon className="c-icon" type="wallet" />}
