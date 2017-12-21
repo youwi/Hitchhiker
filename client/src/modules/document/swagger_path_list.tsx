@@ -96,7 +96,8 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
     }
     calcFilterCount=()=>{
         let count=0
-        const {activeTag, swagger} = this.props;
+        let {activeTag, swagger} = this.props;
+        if(swagger==null){swagger={paths:{},tags:[]}}
         let filteredPaths= Object.keys(swagger.paths)
             .map(path =>
                 Object.keys(swagger.paths[path]).filter((method) => {
@@ -182,8 +183,8 @@ class SwaggerPathList extends React.Component<SwaggerListProps, SwaggerListState
 
 
     public render() {
-        const {activeTag, swagger,pathTags,pathTagsPK} = this.props;
-
+        let {activeTag, swagger,pathTags,pathTagsPK} = this.props;
+        if(swagger==null){swagger={paths:{},tags:[]}}
 
         let totalCount=0;
         Object.keys(swagger.paths).map(path=>{

@@ -67,6 +67,8 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
     calcTagNameCount=(swagger)=>{
         let newTags={}
         let allCount=0
+        if(swagger==null) swagger={paths:{},tags:[]}
+        if(swagger.paths==null) swagger.paths={}
         Object.keys(swagger.paths).map(path=>{
             Object.keys(swagger.paths[path]).map(method=>{
                 allCount++
@@ -94,8 +96,9 @@ class SwaggerTagList extends React.Component<SwaggerListProps, SwaggerListState>
         );
     }
     public render() {
-        const { activeTag,swagger } = this.props;
+        let { activeTag,swagger } = this.props;
         const tagNameCount=this.calcTagNameCount(swagger)
+        if(swagger==null){swagger={paths:{},tags:[]}}
         return (
             <div className="collection-panel collection-tree">
 
