@@ -1,12 +1,14 @@
 import * as _ from 'lodash';
-import * as fs from 'fs';
 import * as path from 'path';
+import * as fs from 'fs-extra';
 import { SessionService } from '../services/session_service';
 import { UserVariableManager } from '../services/user_variable_manager';
 import { Setting } from '../utils/setting';
 import { ProjectData } from '../interfaces/dto_project_data';
 import { ProjectFolderType } from '../common/string_type';
 import * as AdmZip from 'adm-zip';
+import { ChildProcessManager } from '../run_engine/process/child_process_manager';
+import { ScheduleProcessHandler } from '../run_engine/process/schedule_process_handler';
 
 export class ProjectDataService {
 
@@ -36,6 +38,19 @@ export class ProjectDataService {
         // });
     }
 
+    reload() {
+        this.clearAll();
+        this.initGlobalFiles();
+        this.initProjectFiles();
+    }
+
+    notifyLibsChanged() {
+        const handler = ChildProcessManager.default.getHandler('schedule') as ScheduleProcessHandler;
+        if (handler) {
+            handler.reloadLib();
+        }
+    }
+
     getProjectAllJSFiles(projectId: string) {
         const allJSFiles = {};
         _.keys(this._gJsFiles).forEach(k => allJSFiles[k] = this._gJsFiles[k]);
@@ -60,7 +75,7 @@ export class ProjectDataService {
     }
 
     prepareProjectFolder(pid: string) {
-        const projectFolder = path.join(ProjectDataService.globalFolder, `${pid}`);
+        const projectFolder = this.getProjectFolder(pid);
         if (!fs.existsSync(projectFolder)) {
             fs.mkdirSync(projectFolder, 0o666);
             fs.mkdirSync(this.getActualPath(projectFolder, ProjectDataService.libFolderName), 0o666);
@@ -73,8 +88,12 @@ export class ProjectDataService {
             this.unZipJS(pid, file);
         } else {
             const projectFile = this.getProjectFile(pid, file, ProjectDataService.dataFolderName);
+            if (!this._pDataFiles[pid]) {
+                this._pDataFiles[pid] = {};
+            }
             this._pDataFiles[pid][file] = { name: file, path: projectFile, createdDate: new Date(), size: 0 };
         }
+        this.notifyLibsChanged();
     }
 
     unZipJS(pid: string, file: string) {
@@ -82,7 +101,7 @@ export class ProjectDataService {
         if (!fs.existsSync(projectFile)) {
             return;
         }
-        const projectFolder = path.join(ProjectDataService.globalFolder, `${pid}`);
+        const projectFolder = this.getProjectFolder(pid);
         const targetFile = this.removeExt(projectFile, 'zip');
         new AdmZip(projectFile).extractAllTo(targetFile, true);
         if (!this._pJsFiles[pid]) {
@@ -96,8 +115,25 @@ export class ProjectDataService {
         const files = type === ProjectDataService.dataFolderName ? this._pDataFiles : this._pJsFiles;
         if (files[pid] && files[pid][file]) {
             Reflect.deleteProperty(files[pid], file);
-            fs.unlink(this.getProjectFile(pid, file, ProjectDataService.dataFolderName));
+            fs.removeSync(this.getProjectFile(pid, file, type));
         }
+    }
+
+    clearAll() {
+        this.clearData(this._pJsFiles);
+        this.clearData(this._gJsFiles);
+        this.clearData(this._pDataFiles);
+        this.clearData(this._gDataFiles);
+    }
+
+    private clearData(data: _.Dictionary<any>) {
+        if (!data) {
+            return;
+        }
+
+        Object.keys(data).forEach(k => {
+            delete data[k];
+        });
     }
 
     private initFolderFiles(folder: string, isProject: boolean, isJs: boolean, pid?: string) {
@@ -134,10 +170,10 @@ export class ProjectDataService {
     }
 
     private initProjectFiles() {
-        const projectFolders = fs.readdirSync(ProjectDataService.globalFolder).filter(f => fs.lstatSync(path.join(ProjectDataService.globalFolder, f)).isDirectory && !this.isDataOrLibFolder(f));
+        const projectFolders = fs.readdirSync(path.join(ProjectDataService.globalFolder, 'project')).filter(f => fs.lstatSync(path.join(ProjectDataService.globalFolder, 'project', f)).isDirectory && !this.isDataOrLibFolder(f));
         projectFolders.forEach(folder => {
-            this.initFolderFiles(path.join(ProjectDataService.globalFolder, folder), true, true, folder);
-            this.initFolderFiles(path.join(ProjectDataService.globalFolder, folder), true, false, folder);
+            this.initFolderFiles(path.join(ProjectDataService.globalFolder, 'project', folder), true, true, folder);
+            this.initFolderFiles(path.join(ProjectDataService.globalFolder, 'project', folder), true, false, folder);
         });
     }
 
@@ -158,7 +194,11 @@ export class ProjectDataService {
         return file.endsWith(ext) ? file.substr(0, file.length - ext.length - 1) : file;
     }
 
+    private getProjectFolder(pid: string) {
+        return path.join(ProjectDataService.globalFolder, `project/${pid}`);
+    }
+
     getProjectFile(pid: string, file: string, type: ProjectFolderType): string {
-        return path.join(ProjectDataService.globalFolder, `${pid}/${type}/${file}`);
+        return path.join(ProjectDataService.globalFolder, `project/${pid}/${type}/${file}`);
     }
 }

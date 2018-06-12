@@ -3,6 +3,7 @@ import { connect, Dispatch } from 'react-redux';
 import RequestUrlPanel from './request_url_panel';
 import RequestOptionPanel from './request_option_panel';
 import RequestNamePanel from './request_name_panel';
+import RequestQueryStringPanel from './request_query_string_panel';
 import ResponsePanel from './response_panel'; import { Tabs, Badge, Modal, Button } from 'antd';
 import * as _ from 'lodash';
 import EnvironmentSelect from './environment_select';
@@ -12,10 +13,12 @@ import { actionCreator } from '../../../action/index';
 import { ActiveTabType, SaveRecordType, AddTabType, RemoveTabType } from '../../../action/record';
 import { DtoRecord } from '../../../../../api/interfaces/dto_record';
 import { State } from '../../../state/index';
-import { ResizeResHeightType } from '../../../action/ui';
-import { getReqActiveTabKeySelector, getIsResPanelMaximumSelector, getActiveRecordStateSelector, getResHeightSelector } from './selector';
+import { ResizeResHeightType, BatchCloseType } from '../../../action/ui';
+import { getReqActiveTabKeySelector, getIsResPanelMaximumSelector, getActiveRecordStateSelector, getResHeightSelector, getActiveReqResUIStateSelector } from './selector';
 import { newRecordFlag } from '../../../common/constants';
 import { ConflictType } from '../../../common/conflict_type';
+import Msg from '../../../locales';
+import { CloseAction } from '../../../common/custom_type';
 
 interface ReqResPanelStateProps {
 
@@ -30,6 +33,12 @@ interface ReqResPanelStateProps {
     isRequesting: boolean;
 
     resHeight: number;
+
+    displayQueryString: boolean;
+
+    closeAction: CloseAction;
+
+    activedTabBeforeClose: string;
 }
 
 interface ReqResPanelDispatchProps {
@@ -43,6 +52,8 @@ interface ReqResPanelDispatchProps {
     save(record: DtoRecord);
 
     resizeResHeight(recordId: string, height: number);
+
+    batchClose(closeAction: CloseAction, activedTab: string);
 }
 
 type ReqResPanelProps = ReqResPanelStateProps & ReqResPanelDispatchProps;
@@ -74,12 +85,18 @@ class ReqResPanel extends React.Component<ReqResPanelProps, ReqResPanelState> {
         return !_.isEqual(this.getUsingProperties(this.props), this.getUsingProperties(nextProps)) || !_.isEqual(this.state, nextState);
     }
 
-    public componentDidMount() {
+    componentDidMount() {
         this.adjustResPanelHeight();
     }
 
     componentDidUpdate(prevProps: ReqResPanelProps, prevState: ReqResPanelState) {
         this.adjustResPanelHeight();
+    }
+
+    componentWillReceiveProps(nextProps: ReqResPanelProps) {
+        if (nextProps.closeAction !== CloseAction.none) {
+            this.setState({ ...this.state, currentEditKey: nextProps.activeKey, isConfirmCloseDlgOpen: true });
+        }
     }
 
     private getUsingProperties = (props: ReqResPanelProps) => {
@@ -88,6 +105,7 @@ class ReqResPanel extends React.Component<ReqResPanelProps, ReqResPanelState> {
             isResPanelMaximum: props.isResPanelMaximum,
             activeReqTab: props.activeReqTab,
             isRequesting: props.isRequesting,
+            displayQueryString: props.displayQueryString,
             recordProperties: _.values(props.recordStates).map(r => ({
                 isChanged: r.isChanged,
                 name: r.name,
@@ -108,14 +126,28 @@ class ReqResPanel extends React.Component<ReqResPanelProps, ReqResPanelState> {
     }
 
     private closeTabWithoutSave = () => {
-        this.props.removeTab(this.state.currentEditKey);
+        const { closeAction, activedTabBeforeClose, batchClose, removeTab } = this.props;
         this.setState({ ...this.state, currentEditKey: '', isConfirmCloseDlgOpen: false });
+        removeTab(this.state.currentEditKey);
+        if (closeAction !== CloseAction.none) {
+            batchClose(closeAction, activedTabBeforeClose);
+        }
     }
 
     private closeTabWithSave = () => {
-        this.props.save(this.props.recordStates[this.state.currentEditKey].record);
-        this.props.removeTab(this.state.currentEditKey);
+        const { closeAction, activedTabBeforeClose, batchClose, removeTab, save } = this.props;
         this.setState({ ...this.state, currentEditKey: '', isConfirmCloseDlgOpen: false });
+        save(this.props.recordStates[this.state.currentEditKey].record);
+        if (closeAction === CloseAction.none) {
+            removeTab(this.state.currentEditKey);
+        } else {
+            batchClose(closeAction, activedTabBeforeClose);
+        }
+    }
+
+    private cancelClose = () => {
+        this.props.batchClose(CloseAction.none, '');
+        this.setState({ ...this.state, isConfirmCloseDlgOpen: false });
     }
 
     private adjustResPanelHeight = () => {
@@ -131,31 +163,32 @@ class ReqResPanel extends React.Component<ReqResPanelProps, ReqResPanelState> {
 
     private get confirmCloseDialog() {
         return (
-            <Modal title="Close Tab"
+            <Modal
+                title={Msg('Collection.CloseTab')}
                 visible={this.state.isConfirmCloseDlgOpen}
-                onCancel={() => this.setState({ ...this.state, isConfirmCloseDlgOpen: false })}
+                onCancel={this.cancelClose}
                 footer={[(
                     <Button key="dont_save" onClick={this.closeTabWithoutSave} >
-                        Don't Save
+                        {Msg('Common.DontSave')}
                     </Button>
                 ), (
-                    <Button key="cancel_save" onClick={() => this.setState({ ...this.state, isConfirmCloseDlgOpen: false })} >
-                        Cancel
+                    <Button key="cancel_save" onClick={this.cancelClose} >
+                        {Msg('Common.Cancel')}
                     </Button>
                 ), (
                     <Button key="save" type="primary" onClick={this.closeTabWithSave} >
-                        Save
+                        {Msg('Common.Save')}
                     </Button>
                 )]}
             >
-                Your changed will be lost if you close this tab without saving.
+                {Msg('Collection.LoseChanges')}
             </Modal>
         );
     }
 
     public render() {
 
-        const { recordStates, activeKey, activeTab, isResPanelMaximum } = this.props;
+        const { recordStates, activeKey, activeTab, isResPanelMaximum, displayQueryString } = this.props;
 
         return (
             <div className="request-tab" ref={ele => this.reqResPanel = ele}>
@@ -176,7 +209,8 @@ class ReqResPanel extends React.Component<ReqResPanelProps, ReqResPanelState> {
                                 <Tabs.TabPane
                                     key={key}
                                     tab={<Badge count="" dot={isChanged}><span style={tabFontColorStyle}>{name}</span></Badge>}
-                                    closable={true} />
+                                    closable={true}
+                                />
                             );
                         })
                     }
@@ -188,6 +222,7 @@ class ReqResPanel extends React.Component<ReqResPanelProps, ReqResPanelState> {
                                 <div>
                                     <RequestNamePanel />
                                     <RequestUrlPanel />
+                                    {displayQueryString ? <RequestQueryStringPanel /> : ''}
                                     <RequestOptionPanel />
                                 </div>
                             ) : ''
@@ -203,13 +238,17 @@ class ReqResPanel extends React.Component<ReqResPanelProps, ReqResPanelState> {
 
 const mapStateToProps = (state: State): ReqResPanelStateProps => {
     const { activeKey, recordStates } = state.displayRecordsState;
+    const { closeAction, activedTabBeforeClose } = state.uiState.closeState;
     return {
         activeKey,
         recordStates,
         isRequesting: getActiveRecordStateSelector()(state).isRequesting,
+        displayQueryString: getActiveReqResUIStateSelector()(state).displayQueryString,
         isResPanelMaximum: getIsResPanelMaximumSelector()(state),
         activeReqTab: getReqActiveTabKeySelector()(state),
         resHeight: getResHeightSelector()(state),
+        closeAction,
+        activedTabBeforeClose
     };
 };
 
@@ -219,7 +258,8 @@ const mapDispatchToProps = (dispatch: Dispatch<any>): ReqResPanelDispatchProps =
         addTab: () => dispatch(actionCreator(AddTabType)),
         removeTab: (key) => dispatch(actionCreator(RemoveTabType, key)),
         save: (record) => dispatch(actionCreator(SaveRecordType, { isNew: false, record })),
-        resizeResHeight: (recordId, height) => dispatch(actionCreator(ResizeResHeightType, { recordId, height }))
+        resizeResHeight: (recordId, height) => dispatch(actionCreator(ResizeResHeightType, { recordId, height })),
+        batchClose: (closeAction, activedTab) => dispatch(actionCreator(BatchCloseType, { closeAction, activedTab }))
     };
 };
 

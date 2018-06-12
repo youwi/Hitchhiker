@@ -23,6 +23,9 @@ export class ScheduleRecord {
     @Column()
     isScheduleRun: boolean;
 
+    @Column({ default: () => `'1949-10-01'` })
+    runDate: Date;
+
     @CreateDateColumn()
     createDate: Date;
 }

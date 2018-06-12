@@ -70,7 +70,7 @@ export default class ProjectController extends BaseController {
         const data = <{ info: InviteToProjectToken, user: User, project: Project }>validateRst.result;
 
         if (data.user.projects.find(o => o.id === projectId)) {
-            return Message.alreadyInProject;
+            return Message.get('alreadyInProject');
         }
 
         data.user.projects.push(data.project);
@@ -92,24 +92,24 @@ export default class ProjectController extends BaseController {
         const data = <{ info: InviteToProjectToken, user: User, project: Project }>validateRst.result;
         MailService.rejectProjectMail(data.info.inviterEmail, data.info.userEmail, data.project.name);
 
-        return Message.rejectProjectSuccess;
+        return Message.get('rejectProjectSuccess');
     }
 
     private async validateInfo(projectId: string, token: string): Promise<ResObject> {
         if (!TokenService.isValidToken(token)) {
-            return { success: false, message: Message.tokenInvalid };
+            return { success: false, message: Message.get('tokenInvalid') };
         }
 
         const info = TokenService.parseToken<InviteToProjectToken>(token);
 
         if (projectId !== info.projectId) {
-            return { success: false, message: Message.tokenInvalid };
+            return { success: false, message: Message.get('tokenInvalid') };
         }
 
         const project = await ProjectService.getProject(projectId);
 
         if (!project) {
-            return { success: false, message: Message.projectNotExist };
+            return { success: false, message: Message.get('projectNotExist') };
         }
 
         TokenService.removeToken(token);
@@ -131,19 +131,41 @@ export default class ProjectController extends BaseController {
         const project = await ProjectService.getProject(projectId, false, true);
 
         if (!project) {
-            return { success: false, message: Message.projectNotExist };
+            return { success: false, message: Message.get('projectNotExist') };
         }
 
         emailArr = _.difference(emailArr, project.members.map(t => t.email));
         if (emailArr.length === 0) {
-            return { success: false, message: Message.emailsAllInProject };
+            return { success: false, message: Message.get('emailsAllInProject') };
         }
 
         const user = (<any>ctx).session.user;
-        const results = await Promise.all(emailArr.map(email => MailService.projectInviterMail(email, user, project)));
-        const success = results.every(rst => !rst.err);
+        let result;
+        if (Setting.instance.inviteMemberDirectly) {
+            const results = await Promise.all(emailArr.map(email => this.joinProjectDirectly(email, project, user.email)));
+            result = { success: results.every(rst => rst.success), message: results.filter(r => !r.success).map(rst => rst.message).join(';') };
+        } else {
+            const results = await Promise.all(emailArr.map(email => MailService.projectInviterMail(email, user, project)));
+            const success = results.every(rst => !rst.err);
+            result = { success: success, message: results.map(rst => rst.err).join(';') };
+        }
+        return result;
+    }
 
-        return { success: success, message: results.map(rst => rst.err).join(';') };
+    private async joinProjectDirectly(email: string, project: Project, inviter: string): Promise<ResObject> {
+        let targetUser = await UserService.getUserByEmail(email, true);
+        if (!targetUser) {
+            const result = await UserService.createUserByEmail(email, true);
+            if (!result.success) {
+                return result;
+            }
+            targetUser = result.result;
+        }
+
+        targetUser.projects.push(project);
+        await UserService.save(targetUser);
+        MailService.joinProjectMail(inviter, email, project.name);
+        return { success: true, message: '' };
     }
 
     @PUT('/project/:projectId/globalfunc')
@@ -151,8 +173,17 @@ export default class ProjectController extends BaseController {
         return await ProjectService.updateGlobalFunc(projectId, globalFunc.content);
     }
 
+    @DELETE('/project/:projectId/file/:type/:name')
+    deleteProjectFile( @PathParam('projectId') projectId: string, @PathParam('type') type: ProjectFolderType, @PathParam('name') name: string): ResObject {
+        ProjectDataService.instance.removeFile(type, projectId, name);
+        return { success: true, message: Message.get('deleteProjectFileSuccess') };
+    }
+
     @POST('/project/:projectId/:type')
-    async uploadProjectData(ctx: Koa.Context, @PathParam('projectId') projectId: string, @PathParam('type') type: ProjectFolderType) {
+    async uploadProjectFile(ctx: Koa.Context, @PathParam('projectId') projectId: string, @PathParam('type') type: ProjectFolderType) {
+        if (!Setting.instance.enableUpload) {
+            return;
+        }
 
         let fileName;
         const storage = multer.diskStorage({

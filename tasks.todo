@@ -100,14 +100,68 @@
     ✔ sync user data per 30s @done (10/29/2017, 5:52:24 PM)
     ✔ url encode @done (10/29/2017, 5:52:25 PM)
 0.4:
-    ☐ #26 pre request script
-    ☐ #29 project folder system
-    ☐ #22 min unit for schedule
-    ☐ #34 email notify interface
+    ✔ #26 pre request script @done (11/11/2017, 10:45:46 AM)
+    ✔ #29 project folder system @done (11/11/2017, 10:45:47 AM)
+    ✔ #22 min unit for schedule @done (11/11/2017, 11:45:24 PM)
+    ✔ #34 email notify interface @done (11/11/2017, 4:26:18 PM)
     ✔ #24 schedule sort request invalid @done (11/8/2017, 1:38:25 PM)
-    ☐ #24 add a run now interface
-    ☐ env edit dialog will be clear when sync data
+    ✔ #24 add a run now interface @done (11/11/2017, 5:36:16 PM)
+    ✔ sync will override @done (11/12/2017, 10:53:17 PM)
+    ✔ env edit dialog will be clear when sync data @done (11/11/2017, 11:12:31 AM)
 0.5:
+    ✔ #41 New property `request` for Script included url, body, headers, method, new method `setRequest(request)` to change request before sent. @done (12/1/2017, 12:56:33 PM)
+    ✔ #41 Common Pre Request Script for Collection，this script will apply to all requests of this Collection. @done (12/1/2017, 12:56:34 PM)
+    ✔ #42 New config setting `inviteMemberDirectly` used to set if need email to invite members to Project, default is true (without email)。 @done (12/1/2017, 12:56:35 PM)
+    ✔ #43 New document in gitboook： https://brookshi.gitbooks.io/hitchhiker/content/en/introduction.html @done (12/1/2017, 12:56:36 PM)
+    ✔ #44 New option `Request Follow Redirect` for Collection used to follow redirect if response status is 3xx, default is false. @done (12/1/2017, 12:56:37 PM)
+    ✔ #51 New option `Request Strict SSL` for Colllection used to check SSL cert, default is false. @done (12/1/2017, 12:56:37 PM)
+0.6:
+    ✔ #45 Stress test support ES6 and js lib, data. @done (12/16/2017, 3:26:11 PM)
+    ✔ Test & Global function support Environment @done (12/11/2017, 1:34:05 PM)
+    ✔ #47 display image if response header include 'image/*' @done (12/16/2017, 9:37:25 PM)
+    ✔ #62 global function miss if send request @done (12/16/2017, 5:22:03 PM)
+    ✔ #59 exception caused by image data of schedule record @done (12/16/2017, 9:37:27 PM)
+    ✔ #55 failed to construct WebSocket @done (12/16/2017, 10:04:11 PM)
+    ✔ schedule record timer take 1 min error @done (12/16/2017, 10:41:33 PM)
+    ✔ name will be reset if change method @done (12/16/2017, 6:03:13 PM)
+0.7:
+    ✔ #63 support console.log debug @done (12/19/2017, 7:03:08 PM)
+    ✔ #57 parameters could be a parameter @done (12/30/2017, 12:27:42 PM)
+    ✔ #34 smtp service @done (12/20/2017, 1:04:38 AM)
+    ✔ #30 support swagger import @done (12/27/2017, 12:02:59 AM)
+    ✔ new request from curl @done (12/24/2017, 8:39:01 PM)
+    ✔ generate code for request @done (12/26/2017, 12:31:28 PM)
+    ✔ beauty body(json/xml) @done (12/23/2017, 3:40:26 PM)
+    ✔ beautify xml response @done (12/23/2017, 11:26:06 PM)
+    ✔ schedule compare display diff @done (12/23/2017, 11:15:18 PM)
+    ✔ common pre script save error for new collection, strict ssl null @done (12/23/2017, 11:32:31 PM)
+    ✔ schedule save failed when check and uncheck compare @done (12/23/2017, 4:17:49 PM)
+    ✔ import postman json failed - headers may be null @done (12/23/2017, 4:20:21 PM)
+    ✔ request's duration miss waiting connect @done (12/27/2017, 6:50:10 PM)
+    ✔ not stop when find password failed @done (12/27/2017, 12:46:12 PM)
+    ✔ remove error annotate of variable in script/parameters @done (12/29/2017, 12:14:32 AM)
+0.8: 
+    ✔ schedule statistics mode @done (1/9/2018, 6:57:58 PM)
+    ✔ #67 stop stress test @done (1/11/2018, 12:46:45 PM)
+    ✔ #64 run all schedule @done (1/11/2018, 12:01:36 AM)
+    ✔ schedule record filter @done (1/11/2018, 10:42:31 PM)
+    ✔ package compiled app @done (1/14/2018, 12:45:49 AM)
+    ✔ change duplicated env will apply the change to origin env @done (1/11/2018, 1:45:34 PM)
+
+0.9:
+    ✔ test function base on UI @done (2/1/2018, 9:34:57 PM)
+    ✔ use domain name for host in yml will cause stress test connect failed @done (2/1/2018, 11:08:24 PM)
+    ✔ add schedule record store mode @done (2/1/2018, 9:34:55 PM)
+
+backlog:
+    ☐ pre script, header, auth, test in Collection/folder level
+    ☐ edit global function in collection module
+    ☐ handle zip response
+    ☐ auth
+    ☐ response timeline
+    ☐ resize request panel and response panel height 
+    ☐ distributed stress nodejs test
+    ☐ stress result export to excel
     ☐ form data, text, binary body type
     ☐ import postman env
     ☐ convert variable function while importing postman collection
@@ -116,22 +170,23 @@
     ☐ project share collection/env
     ☐ body type
     ☐ project share collection/env for own
-    ☐ stop running stress test
-0.6:
+    ☐ login user email case sensitive in linux mysql
+    ☐ api data zip
     ☐ variable highlight
     ☐ save all tabs, close all tabs, close all but active.
     ☐ Me project should be removable
-0.7.0:
+    ☐ sub folder
+
     ☐ data mock
     ☐ test result detail
     ☐ hot key
-0.8.0:
+    ☐ export
+
     ☐ api document
-    ☐ record auth
-0.9.0:
+
     ☐ project permission
 
-backlog:
+
     ☐ import from fiddler package
 
 4a0a4b0cb56b86075a895be24d8eba06

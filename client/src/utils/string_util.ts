@@ -2,13 +2,80 @@ import * as uuid from 'uuid';
 import { KeyValuePair } from '../common/key_value_pair';
 import { Beautify } from './beautify';
 import * as shortId from 'shortid';
-import { ParameterType } from '../common/parameter_type';
+import { ParameterType, ReduceAlgorithmType } from '../common/parameter_type';
 import * as _ from 'lodash';
 import { allParameter } from '../common/constants';
+import LocalesString from '../locales/string';
+import { DtoHeader } from '../../../api/interfaces/dto_header';
+import { PairwiseStrategy } from './pairwise';
 
 export class StringUtil {
     static generateUID(): string {
         return `${uuid.v1()}-${shortId.generate()}`;
+    }
+
+    static base64(s: string) {
+        return window.btoa(s);
+    };
+
+    static toBase64Excel(table: string): string {
+        const uri = 'data:application/vnd.ms-excel;base64,';
+        const template = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Worksheet</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>${table}</body></html>`;
+
+        return uri + this.base64(template);
+    }
+
+    static urlRegex(): RegExp {
+        const protocol = `(?:(?:[a-z]+:)?//)`;
+        const auth = '(?:\\S+(?::\\S*)?@)?';
+        const ipv4 = '(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){3}';
+        const ip = new RegExp('^' + ipv4 + '$').source;
+        const host = '(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)';
+        const domain = '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*';
+        const tld = `(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))\\.?`;
+        const port = '(?::\\d{2,5})?';
+        const path = '(?:[/?#][^\\s"]*)?';
+        const regex = `(?:${protocol}|www\\.)${auth}(?:localhost|${ip}|${host}${domain}${tld})${port}${path}`;
+
+        return new RegExp(`(?:^${regex}$)`, 'i');
+    }
+
+    static parseUrl(url: string): { url: string, querys: { key: string, value: string }[] } {
+        const arr = url.split('?');
+        const result = { url: arr[0], querys: new Array<{ key: string, value: string }>() };
+        if (arr.length < 2) {
+            return result;
+        }
+        const queryStr = url.substr(url.indexOf('?'));
+        const matchedQueryStr = queryStr === '?' ? '' : _.get(queryStr.match(/^\?([^#]+)/), '[1]');
+        if (_.isString(matchedQueryStr)) {
+            result.querys = matchedQueryStr.split('&').map(q => {
+                let keyValue = q.split('=');
+                return {
+                    key: _.trim(keyValue[0]) || '',
+                    value: keyValue[1] ? q.substr(q.indexOf('=') + 1) : keyValue[1],
+                };
+            });
+        }
+        return result;
+    }
+
+    static stringifyUrl(url: string, querys: DtoHeader[]) {
+        const arr = (url || '').split('?');
+
+        if (querys && querys.length) {
+            let queryString = '';
+            const activeQuerys = querys.filter(q => q.isActive && q.key != null);
+            activeQuerys.forEach((q, i) => {
+                queryString += `${q.key}${q.value != null ? '=' : ''}${q.value || ''}`;
+                if (i !== activeQuerys.length - 1) {
+                    queryString += '&';
+                }
+            });
+            return `${arr[0]}${queryString != null ? '?' : ''}${queryString}`;
+        }
+
+        return url;
     }
 
     static upperFirstAlphabet(word: string): string {
@@ -77,13 +144,17 @@ export class StringUtil {
         }
     }
 
+    static getEditorType(value: string, header: string) {
+        return StringUtil.isJson(value) ? 'json' : (header && header.indexOf('xml') > -1 ? 'xml' : 'text');
+    }
+
     static isNumberString(str: string): boolean {
         const pattern = /^\d+$/;
         return pattern.test(str);
     }
 
     static checkEmail(email: string): boolean {
-        const pattern = /^[^@]+@[^\.@]+\.[a-zA-Z]+$/;
+        const pattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         return pattern.test(email);
     }
 
@@ -101,13 +172,13 @@ export class StringUtil {
         const separator = ';';
         const emailArr = emails instanceof Array ? emails : emails.split(separator);
         if (!emailArr || emailArr.length === 0) {
-            return { success: false, message: 'at least one email', emails: [] };
+            return { success: false, message: LocalesString.get('Common.AtLeastOneEmail'), emails: [] };
         }
 
         const invalidEmailArr = emailArr.filter(e => !StringUtil.checkEmail(e));
         return {
             success: invalidEmailArr.length === 0,
-            message: `${invalidEmailArr.join(';')} is invalid`,
+            message: `${invalidEmailArr.join(';')} ${LocalesString.get('Common.invalid')}`,
             emails: emailArr.filter(e => StringUtil.checkEmail(e))
         };
     }
@@ -120,9 +191,23 @@ export class StringUtil {
         }
     }
 
+    static getContentTypeFromHeaders(headers: { [key: string]: string | string[] }, defaultValue: string = 'json'): string {
+        let contentType = defaultValue;
+        const contentTypeValue = headers['content-type'];
+        if (typeof contentTypeValue === 'string') {
+            contentType = contentTypeValue;
+        } else if (contentTypeValue && contentTypeValue.length > 0) {
+            contentType = contentTypeValue[0];
+        }
+        return contentType;
+    }
+
     static verifyParameters(parameters: string, parameterType: ParameterType): { isValid: boolean, count: number, msg: string } {
         if (parameters === '') {
             return { isValid: false, count: 0, msg: '' };
+        }
+        if (/^\{\{.*\}\}$/g.test(parameters)) {
+            return { isValid: true, count: 0, msg: 'Variable parameters. ' };
         }
         let paramObj;
         let count = 0;
@@ -132,7 +217,7 @@ export class StringUtil {
             return { isValid: false, count, msg: e.toString() };
         }
         if (parameters !== '' && (!_.isPlainObject(paramObj) || !_.values<any>(paramObj).every(p => _.isArray(p)))) {
-            return { isValid: false, count, msg: 'Parameters must be a plain object and children must be a array.' };
+            return { isValid: false, count, msg: LocalesString.get('Collection.ParametersMustBeObj') };
         }
         const paramArray = _.values<Array<any>>(paramObj);
         if (parameterType === ParameterType.OneToOne) {
@@ -141,17 +226,17 @@ export class StringUtil {
                     count = paramArray[i].length;
                 }
                 if (paramArray[i].length !== count) {
-                    return { isValid: false, count, msg: `The length of OneToOne parameters' children arrays must be identical.` };
+                    return { isValid: false, count, msg: LocalesString.get('Collection.OneToOneTip') };
                 }
             }
         } else {
             count = paramArray.length === 0 ? 0 : paramArray.map(p => p.length).reduce((p, c) => p * c);
         }
 
-        return { isValid: true, count, msg: `${count} requests: ` };
+        return { isValid: true, count, msg: LocalesString.get('Collection.ParameterRequest', { length: count }) };
     }
 
-    static getParameterArr(paramObj: any, parameterType: ParameterType): Array<any> {
+    static getParameterArr(paramObj: any, parameterType: ParameterType, reduceAlgorithm?: ReduceAlgorithmType): Array<any> {
         const paramArr = new Array<any>();
         if (parameterType === ParameterType.OneToOne) {
             Object.keys(paramObj).forEach((key, index) => {
@@ -160,6 +245,8 @@ export class StringUtil {
                     paramArr[i][key] = paramObj[key][i];
                 }
             });
+        } else if (reduceAlgorithm === ReduceAlgorithmType.pairwise) {
+            return PairwiseStrategy.GetTestCasesByObj(paramObj);
         } else {
             Object.keys(paramObj).forEach((key, index) => {
                 let temp = [...paramArr];
@@ -179,15 +266,15 @@ export class StringUtil {
         return paramArr;
     }
 
-    static getUniqParamArr(parameters: string | undefined, parameterType: ParameterType): Array<any> {
-        const { isValid } = StringUtil.verifyParameters(parameters || '', parameterType);
-        let paramArr = isValid ? StringUtil.getParameterArr(JSON.parse(parameters || ''), parameterType) : new Array<any>();
+    static getUniqParamArr(parameters: string | undefined, parameterType: ParameterType, reduceAlgorithm?: ReduceAlgorithmType): Array<any> {
+        const { isValid, count } = StringUtil.verifyParameters(parameters || '', parameterType);
+        let paramArr = isValid && count > 0 ? StringUtil.getParameterArr(JSON.parse(parameters || ''), parameterType, reduceAlgorithm) : new Array<any>();
         const paramDict = _.keyBy(paramArr, p => StringUtil.toString(p));
         return _.values(paramDict);
     }
 
-    static parseParameters(parameters: string | undefined, parameterType: ParameterType, currentParamIndex: string): { currParam: string, paramArr: Array<any> } {
-        const paramArr = StringUtil.getUniqParamArr(parameters, parameterType);
+    static parseParameters(parameters: string | undefined, parameterType: ParameterType, currentParamIndex: string, reduceAlgorithm?: ReduceAlgorithmType): { currParam: string, paramArr: Array<any> } {
+        const paramArr = StringUtil.getUniqParamArr(parameters, parameterType, reduceAlgorithm);
         const currParam = paramArr[Number.parseInt(currentParamIndex)] || allParameter;
         return { currParam, paramArr };
     }

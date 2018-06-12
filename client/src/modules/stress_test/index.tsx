@@ -10,12 +10,12 @@ import { actionCreator } from '../../action/index';
 import { Layout } from 'antd';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import Splitter from '../../components/splitter';
-import { UpdateLeftPanelType, ResizeLeftPanelType } from '../../action/ui';
+import { UpdateLeftPanelType, ResizeLeftPanelType, TableDisplayType } from '../../action/ui';
 import StressRunHistoryGrid from './stress_run_history_grid';
 import { DtoRecord } from '../../../../api/interfaces/dto_record';
 import { DtoCollection } from '../../../../api/interfaces/dto_collection';
 import { StressRunResult } from '../../../../api/interfaces/dto_stress_setting';
-import { SaveStressType, DeleteStressType, ActiveStressType, RunStressType } from '../../action/stress';
+import { SaveStressType, DeleteStressType, ActiveStressType, RunStressType, StopStressType } from '../../action/stress';
 import StressWorkerStatus from './stress_worker_status';
 
 const { Content, Sider } = Layout;
@@ -41,6 +41,8 @@ interface StressStateProps {
     records: _.Dictionary<DtoRecord>;
 
     runState?: StressRunResult;
+
+    tableDisplay?: boolean;
 }
 
 interface StressDispatchProps {
@@ -58,6 +60,10 @@ interface StressDispatchProps {
     deleteStress(stressId: string);
 
     runStress(stressId: string);
+
+    stopStress(stressId: string);
+
+    switchDisplayMode(tableDisplay: boolean);
 }
 
 type StressProps = StressStateProps & StressDispatchProps;
@@ -70,7 +76,7 @@ class StressTest extends React.Component<StressProps, StressState> {
         return _.chain(this.props.stresses).values<DtoStress>().sortBy('name').value();
     }
     public render() {
-        const { collapsed, leftPanelWidth, collapsedLeftPanel, createStress, selectStress, updateStress, deleteStress, user, activeStress, currentRunStressId, collections, environments, records, stresses, runStress, runState } = this.props;
+        const { collapsed, leftPanelWidth, collapsedLeftPanel, createStress, selectStress, updateStress, deleteStress, user, activeStress, currentRunStressId, collections, environments, records, stresses, runStress, runState, stopStress, tableDisplay, switchDisplayMode } = this.props;
         const stress = stresses[activeStress] || {};
 
         return (
@@ -81,7 +87,8 @@ class StressTest extends React.Component<StressProps, StressState> {
                     collapsible={true}
                     collapsedWidth="0.1"
                     collapsed={collapsed}
-                    onCollapse={collapsedLeftPanel}>
+                    onCollapse={collapsedLeftPanel}
+                >
                     <StressList
                         stresses={this.stressArr}
                         user={user}
@@ -94,6 +101,7 @@ class StressTest extends React.Component<StressProps, StressState> {
                         updateStress={updateStress}
                         deleteStress={deleteStress}
                         runStress={runStress}
+                        stopStress={stopStress}
                         records={records}
                     />
                 </Sider>
@@ -106,6 +114,8 @@ class StressTest extends React.Component<StressProps, StressState> {
                             records={records}
                             runState={runState}
                             stress={stress}
+                            switchDisplayMode={switchDisplayMode}
+                            tableDisplay={tableDisplay}
                         />
                     </PerfectScrollbar>
                 </Content>
@@ -128,7 +138,8 @@ const mapStateToProps = (state: State): StressStateProps => {
         environments: state.environmentState.environments,
         stresses,
         records: records.length === 0 ? {} : records.reduce((p, c) => ({ ...p, ...c })),
-        runState
+        runState,
+        tableDisplay: state.uiState.stressState.tableDisplay
     };
 };
 
@@ -140,7 +151,9 @@ const mapDispatchToProps = (dispatch: Dispatch<any>): StressDispatchProps => {
         selectStress: (stressId) => dispatch(actionCreator(ActiveStressType, stressId)),
         collapsedLeftPanel: (collapsed) => dispatch(actionCreator(UpdateLeftPanelType, collapsed)),
         resizeLeftPanel: (width) => dispatch(actionCreator(ResizeLeftPanelType, width)),
-        runStress: (stressId) => dispatch(actionCreator(RunStressType, stressId))
+        runStress: (stressId) => dispatch(actionCreator(RunStressType, stressId)),
+        stopStress: (stressId) => dispatch(actionCreator(StopStressType, stressId)),
+        switchDisplayMode: (tableDisplay) => dispatch(actionCreator(TableDisplayType, tableDisplay))
     };
 };
 

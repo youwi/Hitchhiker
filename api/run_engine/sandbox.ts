@@ -7,6 +7,47 @@ import { Setting } from '../utils/setting';
 import { ProjectDataService } from '../services/project_data_service';
 import { ProjectData } from '../interfaces/dto_project_data';
 import { ProjectFolderType } from '../common/string_type';
+import { Record } from '../models/record';
+import { ConsoleMsg } from '../interfaces/dto_res';
+import { StringUtil } from '../utils/string_util';
+
+class SandboxRequest {
+
+    url: string;
+
+    method: string;
+
+    headers: _.Dictionary<string>;
+
+    formDatas: _.Dictionary<string>;
+
+    body: string;
+}
+
+class Console {
+
+    msgQueue: Array<ConsoleMsg> = [];
+
+    private write(type: string, msg: string) {
+        this.msgQueue.push({ time: new Date(), type, message: msg, custom: true });
+    }
+
+    log(msg: string) {
+        this.write('log', msg);
+    }
+
+    info(msg: string) {
+        this.write('info', msg);
+    }
+
+    warn(msg: string) {
+        this.write('warn', msg);
+    }
+
+    error(msg: string) {
+        this.write('error', msg);
+    }
+}
 
 export class Sandbox {
 
@@ -14,15 +55,34 @@ export class Sandbox {
 
     private _allProjectJsFiles: _.Dictionary<ProjectData> = {};
 
+    console: Console = new Console();
+
     tests: _.Dictionary<boolean> = {};
 
     variables: any;
 
+    request: SandboxRequest;
+
     exportObj = { content: Sandbox.defaultExport };
 
-    constructor(private projectId: string, private vid: string, private envId: string, private envName: string) {
+    constructor(private projectId: string, private vid: string, private envId: string, private envName: string, private envVariables: _.Dictionary<string>, record?: Record) {
         this.initVariables();
         this._allProjectJsFiles = ProjectDataService.instance.getProjectAllJSFiles(projectId);
+        if (record) {
+            this.request = {
+                url: StringUtil.stringifyUrl(record.url, record.queryStrings),
+                method: record.method || 'GET',
+                body: record.body,
+                formDatas: {},
+                headers: {}
+            };
+            record.headers.filter(h => h.isActive).forEach(h => {
+                this.request.headers[h.key] = h.value;
+            });
+            record.formDatas.filter(h => h.isActive).forEach(f => {
+                this.request.formDatas[f.key] = f.value;
+            });
+        }
     }
 
     private initVariables() {
@@ -35,15 +95,26 @@ export class Sandbox {
 
     require(lib: string) {
         if (Setting.instance.safeVM) {
-            throw new Error('not support [require] in SafeVM mode, you can set it to false if you want to use [require].');
+            throw new Error('not support [require] in SafeVM mode, you can set it to false in config file if you want to use [require].');
         }
         if (!this._allProjectJsFiles[lib]) {
             throw new Error(`no valid js lib named [${lib}], you should upload this lib first.`);
         }
-        return require(this._allProjectJsFiles[lib].path);
+        let libPath = this._allProjectJsFiles[lib].path;
+        if (!fs.existsSync(libPath)) {
+            throw new Error(`[${libPath}] does not exist.`);
+        }
+        const stat = fs.statSync(libPath);
+        if (stat.isDirectory()) {
+            const subFiles = fs.readdirSync(libPath);
+            if (subFiles.length === 1 && fs.statSync(path.join(libPath, subFiles[0])).isDirectory()) {
+                libPath = path.join(libPath, subFiles[0]);
+            }
+        }
+        return require(libPath);
     }
 
-    readFile(file: string): string {
+    readFile(file: string): any {
         return this.readFileByReader(file, f => fs.readFileSync(f, 'utf8'));
     }
 
@@ -71,11 +142,15 @@ export class Sandbox {
     }
 
     getEnvVariable(key: string) {
-        return this.variables[key];
+        return this.variables[key] || this.envVariables[key];
     }
 
     removeEnvVariable(key: string) {
         Reflect.deleteProperty(this.variables, key);
+    }
+
+    setRequest(r: any) {
+        this.request = r;
     }
 
     get environment() {

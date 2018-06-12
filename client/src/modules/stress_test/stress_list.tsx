@@ -13,6 +13,7 @@ import { DtoEnvironment } from '../../../../api/interfaces/dto_environment';
 import { DtoCollection } from '../../../../api/interfaces/dto_collection';
 import StressEditDialog from './stress_edit_dialog';
 import StressItem from './stress_item';
+import Msg from '../../locales';
 
 interface StressListProps {
 
@@ -39,6 +40,8 @@ interface StressListProps {
     deleteStress(stressId: string);
 
     runStress(stressId: string);
+
+    stopStress(stressId: string);
 }
 
 interface StressListState {
@@ -55,7 +58,7 @@ interface StressListState {
 const createDefaultStress: (user: DtoUser) => DtoStress = (user: DtoUser) => {
     return {
         id: StringUtil.generateUID(),
-        name: newStressName,
+        name: newStressName(),
         ownerId: user.id,
         collectionId: '',
         environmentId: noEnvironment,
@@ -117,12 +120,12 @@ class StressList extends React.Component<StressListProps, StressListState> {
     }
 
     public render() {
-        const { activeStress, currentRunStress, stresses, collections, environments, user, deleteStress, runStress } = this.props;
+        const { activeStress, currentRunStress, stresses, collections, environments, user, deleteStress, runStress, stopStress } = this.props;
         return (
             <div>
                 <div className="small-toolbar">
-                    <span>Stresses</span>
-                    <Tooltip mouseEnterDelay={1} placement="bottom" title="create stress test">
+                    <span>{Msg('Stress.Stresses')}</span>
+                    <Tooltip mouseEnterDelay={1} placement="bottom" title={Msg('Stress.CreateTip')}>
                         <Button
                             className="icon-btn stress-add-btn"
                             type="primary"
@@ -149,6 +152,7 @@ class StressList extends React.Component<StressListProps, StressListState> {
                                             delete={() => deleteStress(t.id)}
                                             edit={() => this.editStress(t)}
                                             run={() => runStress(t.id)}
+                                            stop={() => stopStress(t.id)}
                                             isRunning={currentRunStress === t.id}
                                         />
                                     </Menu.Item>

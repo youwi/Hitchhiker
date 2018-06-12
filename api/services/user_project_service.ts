@@ -31,21 +31,21 @@ export class UserProjectService {
             user.projects.splice(projectIndex, 1);
         }
         await UserService.save(user);
-        return { success: true, message: Message.projectQuitSuccess };
+        return { success: true, message: Message.get('projectQuitSuccess') };
     }
 
     static async disbandProject(info: DtoProjectQuit): Promise<ResObject> {
         const project = await ProjectService.getProject(info.projectId, true, false, false, false);
         if (!project) {
-            return { success: false, message: Message.projectNotExist };
+            return { success: false, message: Message.get('projectNotExist') };
         }
         if (project.owner.id !== info.userId) {
-            return { success: false, message: Message.projectDisbandNeedOwner };
+            return { success: false, message: Message.get('projectDisbandNeedOwner') };
         }
         project.owner = undefined;
         await ProjectService.save(project);
         await ProjectService.delete(project.id);
-        return { success: true, message: Message.projectDisbandSuccess };
+        return { success: true, message: Message.get('projectDisbandSuccess') };
     }
 
     static async getUserInfo(user: User): Promise<UserData> {
@@ -59,9 +59,10 @@ export class UserProjectService {
         const projects = _.keyBy(user.projects, 'id');
         user.projects = undefined;
 
-        const schedules = _.keyBy((await ScheduleService.getByUserId(user.id)).map(s => ScheduleService.toDto(s)), 'id');
+        const schedules = await ScheduleService.getByUserId(user.id);
+        const scheduleDict = _.keyBy(schedules.map(s => ScheduleService.toDto(s)), 'id');
 
-        const stresses = _.keyBy((await StressService.getByUserId(user.id)).map(s => StressService.toDto(s)), 'id');
+        const stressDict = _.keyBy((await StressService.getByUserId(user.id)).map(s => StressService.toDto(s)), 'id');
 
         const projectFiles: ProjectFiles = {
             globalJS: ProjectDataService.instance._gJsFiles,
@@ -78,11 +79,14 @@ export class UserProjectService {
             user,
             projects,
             environments,
-            schedules,
-            stresses,
+            schedules: scheduleDict,
+            schedulePageSize: Setting.instance.schedulePageSize,
+            stresses: stressDict,
             projectFiles,
             defaultHeaders: Setting.instance.defaultHeaders,
-            syncInterval: Setting.instance.syncInterval
+            syncInterval: Setting.instance.syncInterval,
+            sync: Setting.instance.sync,
+            enableUpload: Setting.instance.enableUpload
         };
     }
 }

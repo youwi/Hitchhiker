@@ -146,10 +146,12 @@ export function recordStates(states: _.Dictionary<RecordState> = displayRecordsD
     switch (action.type) {
         case SendRequestType: {
             let id = action.value.record.id;
+            let parameterStatus: any = {};
             if (!action.value.record.id) {
                 id = _.values<any>(action.value.record)[0].id;
+                parameterStatus = states[id].parameterStatus;
             }
-            return { ...states, [id]: { ...states[id], isRequesting: true } };
+            return { ...states, [id]: { ...states[id], isRequesting: true, parameterStatus } };
         }
         case SendRequestForParamType: {
             const { param, content } = action.value;
@@ -208,7 +210,7 @@ export function recordWithResState(state: DisplayRecordsState = displayRecordsDe
             return { ...state, responseState: newResState };
         }
         case AddTabType: {
-            const newRecordState = getNewRecordState();
+            const newRecordState = action.value || getNewRecordState();
             return {
                 ...state,
                 recordStates: {

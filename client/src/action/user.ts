@@ -58,6 +58,8 @@ export const SyncUserDataType = 'sync user data';
 
 export const SyncUserDataSuccessType = 'sync user data success';
 
+export const EmptyType = 'empty';
+
 export function* login() {
     yield takeLatest(LoginType, function* (action: any) {
         try {
@@ -203,7 +205,7 @@ export function* changePassword() {
 export function* syncUserData() {
     let syncStart = false;
     yield takeLatest(LoginSuccessType, function* (action: any) {
-        if (syncStart) {
+        if (syncStart || !action.value.result.sync) {
             return;
         }
         syncStart = true;
@@ -216,7 +218,7 @@ export function* syncUserData() {
             }
             if (DateUtil.subNowSec(GlobalVar.instance.lastSyncDate) > 5) {
                 GlobalVar.instance.isUserInfoSyncing = true;
-                const channelAction = syncAction({ type: SyncUserDataType, method: HttpMethod.GET, url: Urls.getUrl(`user/me`), successAction: value => { GlobalVar.instance.isUserInfoSyncing = false; return actionCreator(SyncUserDataSuccessType, { result: value }); } });
+                const channelAction = syncAction({ type: SyncUserDataType, method: HttpMethod.GET, url: Urls.getUrl(`user/me`), successAction: value => { GlobalVar.instance.isUserInfoSyncing = false; return actionCreator(DateUtil.subNowSec(GlobalVar.instance.lastSyncDate) > 5 ? SyncUserDataSuccessType : EmptyType, { result: value }); } });
                 yield put(channelAction);
             }
         }

@@ -1,13 +1,79 @@
 var gulp = require('gulp'),
     argv = require('yargs').argv,
     replace = require('gulp-replace'),
-    exec = require('child_process').exec;
+    exec = require('child_process').exec,
+    fs = require('fs-extra'),
+    path = require('path'),
+    archiver = require('archiver');
 
-gulp.task('release', ['copy']);
+gulp.task('build', ['copyTemplate', 'copyGlobalData', 'copyLocales']);
+
+gulp.task('package', ['release'], function () {
+    const keepFiles = ['build', 'node_modules', 'appconfig.json', 'gulpfile.js', 'logconfig.json', 'mail.json', 'pm2.json', 'sample collection.json', 'tsconfig.json'];
+    const files = fs.readdirSync(__dirname);
+    files.forEach(f => {
+        if (!keepFiles.find(fileName => f.endsWith(fileName))) {
+            fs.removeSync(f)
+        }
+    });
+
+    const zipPath = __dirname;
+    const zipFile = `${zipPath}.zip`;
+    if (fs.existsSync(zipFile)) {
+        fs.unlinkSync(zipFile);
+    }
+
+    const output = fs.createWriteStream(zipFile);
+    const archive = archiver('zip');
+    let isClose = false;
+
+    output.on('close', () => {
+        isClose = true;
+    });
+    output.on('end', () => {
+        isClose = true;
+    });
+
+    archive.pipe(output);
+    archive.directory(zipPath, false);
+    archive.finalize();
+});
+
+gulp.task('release', ['copy', 'copyTemplate', 'copyGlobalData', 'copyLocales', 'createBackupFolder']);
 
 gulp.task('copy', ['compilerClient'], function () {
     return gulp.src('./client/build/**/*.*')
-        .pipe(gulp.dest('./build/public'));
+        .pipe(gulp.dest('./build/public'))
+        .on('end', function () {
+            gulp.src('./pm2.json')
+                .pipe(gulp.dest('./build'))
+        });
+});
+
+gulp.task('copyTemplate', function () {
+    fs.removeSync(path.join(__dirname, 'build/mail/templates'));
+    return gulp.src('./api/mail/templates/**/*.*')
+        .pipe(gulp.dest('./build/mail/templates'));
+});
+
+gulp.task('copyGlobalData', function () {
+    let globalPath = path.join(__dirname, 'build/global_data');
+    fs.removeSync(globalPath);
+    fs.mkdirpSync(`${globalPath}/project`);
+    return gulp.src('./api/global_data/**/*.*')
+        .pipe(gulp.dest('./build/global_data'));
+});
+
+gulp.task('copyLocales', function () {
+    fs.removeSync(path.join(__dirname, 'build/locales'));
+    return gulp.src('./api/locales/**/*.*')
+        .pipe(gulp.dest('./build/locales'));
+});
+
+gulp.task('createBackupFolder', function () {
+    const backupFolder = path.join(__dirname, 'build/backup');
+    fs.rmdirSync(backupFolder);
+    fs.mkdirSync(backupFolder, 0o666);
 });
 
 gulp.task('compilerClient', ['compilerServer'], function (cb) {

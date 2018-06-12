@@ -28,7 +28,7 @@ export default class UserController extends BaseController {
         const password = Setting.instance.app.defaultPassword;
         const email = `${StringUtil.generateShortId()}${Setting.instance.app.tempUser}`;
         await UserService.createUser(name, email, password, true, true);
-        return await this.login(ctx, { id: '', email, password, name })
+        return await this.login(ctx, { id: '', email, password, name });
     }
 
     @DELETE('/user/temp')
@@ -42,14 +42,24 @@ export default class UserController extends BaseController {
 
     @POST()
     async login(ctx: Koa.Context, @BodyParam body: DtoUser): Promise<ResObject> {
-        let checkLogin = await UserService.checkUser(body.email, body.password);
+        const checkLogin = await this.tryLogin(body);
+
         if (!checkLogin.success) {
             return checkLogin;
         }
 
         SessionService.login(ctx, (<User>checkLogin.result.user).id);
 
-        checkLogin.message = Message.userLoginSuccess;
+        return checkLogin;
+    }
+
+    private async tryLogin(user: DtoUser) {
+        let checkLogin = await UserService.checkUser(user.email, user.password);
+        if (!checkLogin.success) {
+            return checkLogin;
+        }
+
+        checkLogin.message = Message.get('userLoginSuccess');
         (<User>checkLogin.result.user).password = undefined;
 
         return checkLogin;
@@ -58,13 +68,13 @@ export default class UserController extends BaseController {
     @GET('/user/me')
     async getUserInfo(ctx: Koa.Context): Promise<ResObject> {
         const user = <User>(<any>ctx).session.user;
-        return await this.login(ctx, user);
+        return await this.tryLogin(user);
     }
 
     @GET('/user/logout')
     logout(ctx: Koa.Context): ResObject {
         SessionService.logout(ctx);
-        return { success: true, message: Message.userLogout };
+        return { success: true, message: Message.get('userLogout') };
     }
 
     @PUT('/user/password')
@@ -75,8 +85,8 @@ export default class UserController extends BaseController {
         }
 
         const user = <User>(<any>ctx).session.user;
-        if (user.password !== info.oldPassword) {// TODO: md5
-            return { success: false, message: Message.userOldPwdIncorrect };
+        if (user.password !== StringUtil.md5Password(info.oldPassword)) {
+            return { success: false, message: Message.get('userOldPwdIncorrect') };
         }
 
         return await UserService.changePwd(user.id, info.newPassword);
@@ -91,7 +101,7 @@ export default class UserController extends BaseController {
 
         const user = await UserService.getUserByEmail(email);
         if (!user) {
-            return { success: false, message: Message.userNotExist };
+            return { success: false, message: Message.get('userNotExist') };
         }
 
         const newPwd = StringUtil.generateShortId();
@@ -100,37 +110,37 @@ export default class UserController extends BaseController {
             return checkRst;
         }
 
-        const mailRst = await MailService.findPwdMail(email, newPwd);
-        const success = !mailRst.err;
+        let rst: ResObject = { success: true, message: Message.get('findPwdSuccess') };
+        await MailService.findPwdMail(email, newPwd).catch(err => rst = { success: false, message: err.message });
 
-        return { success: success, message: success ? Message.findPwdSuccess : `send new password email failed: ${mailRst.err.toString()}` };
+        return rst;
     }
 
     @GET('/user/regconfirm')
     async regConfirm(ctx: Koa.Context, @QueryParam('id') id: string, @QueryParam('token') token: string): Promise<string> {
         const user = await UserService.getUserById(id);
         if (!user) {
-            return Message.regConfirmFailedUserNotExist;
+            return Message.get('regConfirmFailedUserNotExist');
         }
 
         if (user.isActive) {
-            return Message.regConfirmFailedUserConfirmed;
+            return Message.get('regConfirmFailedUserConfirmed');
         }
 
         const json = StringUtil.decrypt(token);
         const info = <RegToken>JSON.parse(json);
 
         if (!info || info.host !== Setting.instance.appHost) {
-            return Message.regConfirmFailedInvalid;
+            return Message.get('regConfirmFailedInvalid');
         }
 
         if (DateUtil.diff(new Date(info.date), new Date()) > 24) {
-            return Message.regConfirmFailedExpired;
+            return Message.get('regConfirmFailedExpired');
         }
 
         UserService.active(user.id);
 
-        ctx.body = Message.regConfirmSuccess;
+        ctx.body = Message.get('regConfirmSuccess');
         ctx.redirect(Setting.instance.appHost);
     }
 

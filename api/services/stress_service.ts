@@ -1,5 +1,6 @@
 import { StringUtil } from '../utils/string_util';
 import { User } from '../models/user';
+import { Record } from '../models/record';
 import { ConnectionManager } from './connection_manager';
 import { Message } from '../common/message';
 import { ResObject } from '../common/res_object';
@@ -16,6 +17,8 @@ import { RecordRunner } from '../run_engine/record_runner';
 import { ProjectService } from './project_service';
 import { EnvironmentService } from './environment_service';
 import { noEnvironment } from '../common/stress_type';
+import { ScriptTransform } from '../utils/script_transform';
+import { ConsoleMessage } from './console_message';
 
 export class StressService {
 
@@ -46,7 +49,7 @@ export class StressService {
 
     static async save(stress: Stress): Promise<any> {
         const connection = await ConnectionManager.getInstance();
-        await connection.getRepository(Stress).persist(stress);
+        await connection.getRepository(Stress).save(stress);
     }
 
     static async getById(id: string): Promise<Stress> {
@@ -84,13 +87,13 @@ export class StressService {
         const stress = StressService.fromDto(dtoStress);
         stress.ownerId = owner.id;
         await StressService.save(stress);
-        return { message: Message.stressCreateSuccess, success: true };
+        return { message: Message.get('stressCreateSuccess'), success: true };
     }
 
     static async update(dtoStress: DtoStress): Promise<ResObject> {
         const stress = StressService.fromDto(dtoStress);
         await StressService.save(stress);
-        return { message: Message.stressUpdateSuccess, success: true };
+        return { message: Message.get('stressUpdateSuccess'), success: true };
     }
 
     static async delete(id: string): Promise<ResObject> {
@@ -110,46 +113,53 @@ export class StressService {
             .where('id=:id', { id })
             .delete()
             .execute();
-        return { success: true, message: Message.stressDeleteSuccess };
+        return { success: true, message: Message.get('stressDeleteSuccess') };
     }
 
     static async getStressInfo(id: string): Promise<ResObject> {
         const stress = await StressService.getById(id);
         if (!stress) {
-            return { success: false, message: Message.stressNotExist };
+            return { success: false, message: Message.get('stressNotExist') };
         }
         const collectionRecords = await RecordService.getByCollectionIds([stress.collectionId]);
         const records = _.keyBy((collectionRecords ? collectionRecords[stress.collectionId] : []).filter(r => stress.requests.some(i => i === r.id)), 'id');
         if (_.keys(records).length === 0) {
-            return { success: false, message: Message.stressNoRecords };
+            return { success: false, message: Message.get('stressNoRecords') };
         }
-        const envVariables = {};
-        if (stress.environmentId && stress.environmentId !== noEnvironment) {
-            const env = await EnvironmentService.get(stress.environmentId, true);
-            if (env) {
-                env.variables.forEach(v => {
-                    if (v.isActive) {
-                        envVariables[v.key] = v.value;
-                    }
-                });
-            }
-        }
+        const envVariables = await EnvironmentService.getVariables(stress.environmentId);
         const { globalFunction } = (await ProjectService.getProjectByCollectionId(stress.collectionId)) || { globalFunction: '' };
         const requestBodyList = new Array<RequestBody>();
-        stress.requests.forEach(i => {
+
+        stress.requests.forEach(i => { // TODO: used for go node in stress, should remove requestBodyList
             let record = records[i];
-            const paramArr = StringUtil.parseParameters(record.parameters, record.parameterType);
+            const paramArr = StringUtil.parseParameters(record.parameters, record.parameterType, record.reduceAlgorithm);
             const headers = {};
+            const url = StringUtil.stringifyUrl(record.url, record.queryStrings);
 
             if (paramArr.length === 0) {
                 record.headers.forEach(h => { if (h.isActive) { headers[h.key] = h.value; } });
-                requestBodyList.push(<any>{ ...record, headers, test: globalFunction + record.test });
+                requestBodyList.push(<any>{
+                    ...record,
+                    url,
+                    headers,
+                    prescript: StressService.mergeScript(globalFunction, record, true),
+                    test: StressService.mergeScript(globalFunction, record, false)
+                });
             } else {
                 for (let p of paramArr) {
                     let newRecord = RecordRunner.applyReqParameterToRecord(record, p);
                     newRecord.headers.forEach(h => { if (h.isActive) { headers[h.key] = h.value; } });
                     const param = StringUtil.toString(p);
-                    requestBodyList.push(<any>{ ...newRecord, param, id: `${record.id}${param}`, name: `${newRecord.name}\n${param}`, headers, test: globalFunction + newRecord.test });
+                    newRecord.id = `${record.id}${param}`;
+                    newRecord.name = `${newRecord.name}\n${param}`;
+                    requestBodyList.push(<any>{
+                        ...newRecord,
+                        url,
+                        param,
+                        headers,
+                        prescript: StressService.mergeScript(globalFunction, record, true),
+                        test: StressService.mergeScript(globalFunction, record, false)
+                    });
                 }
             }
         });
@@ -158,6 +168,11 @@ export class StressService {
             message: '',
             result: {
                 testCase: <TestCase>{
+                    envId: stress.environmentId,
+                    records: await RecordService.prepareRecordsForRun(_.values(records),
+                        stress.environmentId,
+                        ConsoleMessage.create(false),
+                        stress.requests.join(';')),
                     repeat: stress.repeat,
                     concurrencyCount: stress.concurrencyCount,
                     qps: stress.qps,
@@ -169,5 +184,21 @@ export class StressService {
                 name: stress.name
             }
         };
+    }
+
+    private static mergeScript(globalFunction: string, record: Record, isPre: boolean): string {
+        return ScriptTransform.toES5(isPre ? (
+            `
+                ${globalFunction || ''}
+                ${record.collection.compatibleCommonPreScript()}
+                ${record.prescript || ''}
+            `
+        ) : (
+                `
+                ${globalFunction || ''}
+                ${record.collection.commonTest()}
+                ${record.test || ''}
+            `
+            ));
     }
 }

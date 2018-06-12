@@ -12,24 +12,41 @@ export class ScheduleRecordService {
 
     static async create(record: ScheduleRecord): Promise<ScheduleRecord> {
         const connection = await ConnectionManager.getInstance();
-        return await connection.getRepository(ScheduleRecord).persist(record);
+        return await connection.getRepository(ScheduleRecord).save(record);
+    }
+
+    static async get(scheduleId: string, page: number): Promise<[ScheduleRecord[], number]> {
+        const connection = await ConnectionManager.getInstance();
+        return await connection.getRepository(ScheduleRecord)
+            .createQueryBuilder('record')
+            .offset(Setting.instance.schedulePageSize * page)
+            .limit(Setting.instance.schedulePageSize)
+            .where('record.schedule=:id', { id: scheduleId })
+            .orderBy('record.createDate', 'DESC')
+            .getManyAndCount();
     }
 
     static async clearRedundantRecords(scheduleId: string) {
-        const maxCount = Setting.instance.scheduleMaxCount;
+        const { scheduleStoreLimit, scheduleStoreUnit } = Setting.instance;
         const connection = await ConnectionManager.getInstance();
 
-        const records = await connection.getRepository(ScheduleRecord)
+        const query = connection.getRepository(ScheduleRecord)
             .createQueryBuilder('record')
-            .limit(maxCount)
             .where('record.schedule=:id', { id: scheduleId })
-            .orderBy('record.createDate', 'DESC')
-            .getMany();
-        if (records.length < maxCount) {
-            return;
+            .orderBy('record.createDate', 'DESC');
+
+        let records;
+        if (scheduleStoreUnit === 'count') {
+            records = await query.limit(scheduleStoreLimit).getMany();
+            if (records.length < scheduleStoreLimit) {
+                return;
+            }
+        } else {
+            const minDate = new Date().getTime() - (24 * 60 * 60 * 1000) * scheduleStoreLimit;
+            records = await query.where('record.createDate>:date', { date: DateUtil.getUTCDate(new Date(minDate)) }).getMany();
         }
 
-        const lastDate = DateUtil.getUTCDate(records[maxCount - 1].createDate);
+        const lastDate = DateUtil.getUTCDate(records[records.length - 1].createDate);
         await connection.getRepository(ScheduleRecord)
             .createQueryBuilder('record')
             .where('scheduleId=:id', { id: scheduleId })

@@ -4,10 +4,10 @@ import ScheduleItem from './schedule_item';
 import { SelectParam } from 'antd/lib/menu';
 import { DtoUser } from '../../../../api/interfaces/dto_user';
 import { StringUtil } from '../../utils/string_util';
-import { Tooltip, Button, Menu } from 'antd';
+import { Tooltip, Button, Menu, Checkbox } from 'antd';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import ScheduleEditDialog from './schedule_edit_dialog';
-import { Period } from '../../common/period';
+import { Period, TimerType } from '../../common/period';
 import { NotificationMode } from '../../common/notification_mode';
 import { noEnvironment, newScheduleName, unknownName } from '../../common/constants';
 import { DateUtil } from '../../utils/date_util';
@@ -16,6 +16,7 @@ import { ScheduleRunState } from '../../state/schedule';
 import { DtoRecord } from '../../../../api/interfaces/dto_record';
 import { DtoEnvironment } from '../../../../api/interfaces/dto_environment';
 import { DtoCollection } from '../../../../api/interfaces/dto_collection';
+import Msg from '../../locales';
 
 interface ScheduleListProps {
 
@@ -53,25 +54,33 @@ interface ScheduleListState {
     isEditDlgOpen: boolean;
 
     isEditDlgRendered: boolean;
+
+    selectSome: boolean;
+
+    selectAll: boolean;
+
+    selectItems: string[];
 }
 
 const createDefaultSchedule: (user: DtoUser) => DtoSchedule = (user: DtoUser) => {
     return {
         id: StringUtil.generateUID(),
-        name: newScheduleName,
+        name: newScheduleName(),
         ownerId: user.id,
         collectionId: '',
         environmentId: noEnvironment,
         needCompare: false,
         compareEnvironmentId: noEnvironment,
         period: Period.daily,
+        timer: TimerType.Day,
         hour: DateUtil.localHourToUTC(7),
         notification: NotificationMode.none,
         emails: '',
         needOrder: false,
         recordsOrder: '',
         suspend: false,
-        scheduleRecords: []
+        scheduleRecords: [],
+        recordCount: 0
     };
 };
 
@@ -83,7 +92,10 @@ class ScheduleList extends React.Component<ScheduleListProps, ScheduleListState>
             schedule: createDefaultSchedule(props.user),
             isCreateNew: true,
             isEditDlgOpen: false,
-            isEditDlgRendered: false
+            isEditDlgRendered: false,
+            selectAll: false,
+            selectSome: false,
+            selectItems: []
         };
     }
 
@@ -130,13 +142,59 @@ class ScheduleList extends React.Component<ScheduleListProps, ScheduleListState>
         return environmentNames;
     }
 
+    private onItemSelected = (isSelected: boolean, id: string) => {
+        let selectItems: Array<string>;
+        const items = this.state.selectItems;
+        const schedules = this.props.schedules;
+        if (isSelected) {
+            selectItems = items.find(i => i === id) ? items : [...items, id];
+        } else {
+            selectItems = items.filter(i => i !== id);
+        }
+        const selectAll = selectItems.length === schedules.length;
+        const selectSome = selectItems.length > 0 && selectItems.length < schedules.length;
+        this.setState({ ...this.state, selectItems, selectAll, selectSome });
+    }
+
+    private onSelectAll = event => {
+        const isChecked = (event.target as any).checked;
+        this.setState({
+            ...this.state,
+            selectItems: isChecked ? this.props.schedules.map(s => s.id) : [],
+            selectAll: isChecked,
+            selectSome: false
+        });
+    }
+
+    private runSelected = () => {
+        const { selectItems } = this.state;
+        selectItems.forEach(i => this.props.runSchedule(i));
+    }
+
     public render() {
         const { runState, activeSchedule, schedules, collections, environments, user, deleteSchedule, runSchedule, updateSchedule } = this.props;
+        const { selectAll, selectSome, selectItems } = this.state;
         return (
             <div>
                 <div className="small-toolbar">
-                    <span>Schedules</span>
-                    <Tooltip mouseEnterDelay={1} placement="bottom" title="create schedule">
+                    <Checkbox
+                        indeterminate={selectSome}
+                        checked={selectAll}
+                        onChange={this.onSelectAll}
+                    />
+                    <span style={{ marginLeft: -10 }}>{Msg('Schedule.Schedulers')}</span>
+                    {selectItems.length > 0 ? (
+                        <Tooltip mouseEnterDelay={1} placement="bottom" title={Msg('Schedule.RunSchedulers')}>
+                            <Button
+                                className="icon-btn"
+                                style={{ right: 42 }}
+                                type="primary"
+                                icon="play-circle-o"
+                                onClick={this.runSelected}
+                            />
+                        </Tooltip>
+                    ) : ''}
+                    <Tooltip mouseEnterDelay={1} placement="bottom" title={Msg('Schedule.Create')}>
                         <Button
                             className="icon-btn schedule-add-btn"
                             type="primary"
@@ -154,7 +212,7 @@ class ScheduleList extends React.Component<ScheduleListProps, ScheduleListState>
                         onSelect={this.onSelectChanged}
                     >
                         {
-                            schedules.map(t =>
+                            schedules.filter(s => collections[s.collectionId]).map(t =>
                                 (
                                     <Menu.Item key={t.id} data={t}>
                                         <ScheduleItem
@@ -165,9 +223,11 @@ class ScheduleList extends React.Component<ScheduleListProps, ScheduleListState>
                                             isOwner={t.ownerId === user.id}
                                             delete={() => deleteSchedule(t.id)}
                                             edit={() => this.editSchedule(t)}
-                                            run={() => runSchedule(t.id)}
+                                            run={() => { console.log(`run schedule: ${t.id}`); runSchedule(t.id); }}
                                             suspend={() => updateSchedule({ ...t, suspend: !t.suspend })}
                                             isRunning={runState[t.id] ? runState[t.id].isRunning : false}
+                                            isChecked={!!selectItems.find(i => i === t.id)}
+                                            onCheck={isChecked => this.onItemSelected(isChecked, t.id)}
                                         />
                                     </Menu.Item>
                                 )

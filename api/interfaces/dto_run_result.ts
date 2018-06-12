@@ -1,5 +1,6 @@
 import { DtoError } from './dto_error';
 import { Duration } from './dto_stress_setting';
+import { ConsoleMsg } from './dto_res';
 
 export interface RunResult {
 
@@ -27,9 +28,11 @@ export interface RunResult {
 
     duration?: Duration;
 
-    headers: { [key: string]: string };
+    headers: { [key: string]: string | string[] };
 
     cookies: string[];
 
     host: string;
+
+    consoleMsgQueue: ConsoleMsg[];
 }

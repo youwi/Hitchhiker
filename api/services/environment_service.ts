@@ -7,6 +7,7 @@ import { StringUtil } from '../utils/string_util';
 import { DtoEnvironment } from '../interfaces/dto_environment';
 import { VariableService } from './variable_service';
 import { Project } from '../models/project';
+import { noEnvironment } from '../common/stress_type';
 
 export class EnvironmentService {
 
@@ -22,7 +23,7 @@ export class EnvironmentService {
 
     static async save(env: Environment) {
         const connection = await ConnectionManager.getInstance();
-        await connection.getRepository(Environment).persist(env);
+        await connection.getRepository(Environment).save(env);
     }
 
     static formatVariables(env: Environment): { [key: string]: string } {
@@ -50,7 +51,7 @@ export class EnvironmentService {
 
         await EnvironmentService.save(env);
 
-        return { success: true, message: Message.envCreateSuccess };
+        return { success: true, message: Message.get('envCreateSuccess') };
     }
 
     private static adjustVariables(env: Environment) {
@@ -91,7 +92,7 @@ export class EnvironmentService {
             await manager.save(newEnv);
         });
 
-        return { success: true, message: Message.envUpdateSuccess };
+        return { success: true, message: Message.get('envUpdateSuccess') };
     }
 
     static async delete(id: string): Promise<ResObject> {
@@ -104,6 +105,21 @@ export class EnvironmentService {
             });
         }
 
-        return { success: true, message: Message.envDeleteSuccess };
+        return { success: true, message: Message.get('envDeleteSuccess') };
+    }
+
+    static async getVariables(envId: string): Promise<_.Dictionary<string>> {
+        const envVariables = {};
+        if (envId && envId !== noEnvironment) {
+            const env = await EnvironmentService.get(envId, true);
+            if (env) {
+                env.variables.forEach(v => {
+                    if (v.isActive) {
+                        envVariables[v.key] = v.value;
+                    }
+                });
+            }
+        }
+        return envVariables;
     }
 }

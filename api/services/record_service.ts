@@ -1,4 +1,4 @@
-import { Record } from '../models/record';
+import { Record, RecordEx } from '../models/record';
 import { ConnectionManager } from './connection_manager';
 import { ObjectLiteral } from 'typeorm/common/ObjectLiteral';
 import * as _ from 'lodash';
@@ -14,6 +14,14 @@ import { RecordHistory } from '../models/record_history';
 import { EntityManager } from 'typeorm';
 import { User } from '../models/user';
 import { UserService } from './user_service';
+import { ProjectService } from './project_service';
+import { EnvironmentService } from './environment_service';
+import { VariableService } from './variable_service';
+import { QueryStringService } from './query_string_service';
+import { FormDataService } from './form_data_service';
+import { QueryString } from '../models/query_string';
+import { BodyFormData } from '../models/body_form_data';
+import { ConsoleMessage } from './console_message';
 
 export class RecordService {
     private static _sort: number = 0;
@@ -27,25 +35,39 @@ export class RecordService {
         record.url = target.url;
         record.pid = target.pid;
         record.body = target.body || '';
-        if (target.headers instanceof Array) {
-            record.headers = target.headers.map(o => {
-                let header = HeaderService.fromDto(o);
-                header.record = new Record();
-                header.record.id = record.id;
-                return header;
-            });
-        }
+        record.headers = this.handleArray(target.headers, record.id, HeaderService.fromDto);
         record.test = target.test || '';
         record.sort = target.sort;
         record.method = target.method;
         record.collection = collection;
         record.name = target.name;
+        record.description = target.description;
         record.category = target.category;
         record.bodyType = target.bodyType;
+        record.dataMode = target.dataMode;
         record.parameters = target.parameters;
+        record.reduceAlgorithm = target.reduceAlgorithm;
         record.parameterType = target.parameterType;
         record.prescript = target.prescript || '';
+        record.assertInfos = target.assertInfos || {};
+        record.queryStrings = this.handleArray(target.queryStrings, record.id, QueryStringService.fromDto);
+        record.formDatas = this.handleArray(target.formDatas, record.id, FormDataService.fromDto);
         return record;
+    }
+
+    private static handleArray<TTarget extends { record: Record }, TDTO>(dtos: TDTO[] | any, id: string, fromDto: (o: TDTO) => TTarget) {
+        if (dtos instanceof Array) {
+            return dtos.map(o => {
+                let target = fromDto(o);
+                return this.setRecordForChild(target, id);
+            });
+        }
+    }
+
+    private static setRecordForChild<T extends { record: Record }>(child: T, id: string) {
+        child.record = new Record();
+        child.record.id = id;
+        return child;
     }
 
     static toDto(target: Record): DtoRecord {
@@ -62,10 +84,36 @@ export class RecordService {
         return headers;
     }
 
+    static formatKeyValue(keyValues: { key: string, value: string, isActive: boolean }[]) {
+        let objs: { [key: string]: string } = {};
+        keyValues.forEach(o => {
+            if (o.isActive) {
+                objs[o.key] = o.value;
+            }
+        });
+        return objs;
+    }
+
+    static restoreKeyValue<T>(obj: { [key: string]: string }, fromDto: (dto: { isActive: boolean, key: string, value: string, id: string, sort: number }) => T) {
+        const keyValues = [];
+        _.keys(obj || {}).forEach(k => {
+            keyValues.push(fromDto({
+                isActive: true,
+                key: k,
+                value: obj[k],
+                id: '',
+                sort: 0
+            }));
+        });
+        return keyValues;
+    }
+
     static clone(record: Record): Record {
         const target = <Record>Object.create(record);
         target.id = StringUtil.generateUID();
         target.headers = target.headers.map(h => HeaderService.clone(h));
+        target.queryStrings = target.queryStrings.map(h => QueryStringService.clone(h));
+        target.formDatas = target.formDatas.map(h => FormDataService.clone(h));
         target.createDate = new Date();
         return target;
     }
@@ -86,6 +134,8 @@ export class RecordService {
         let rep = connection.getRepository(Record).createQueryBuilder('record')
             .innerJoinAndSelect('record.collection', 'collection')
             .leftJoinAndSelect('record.headers', 'header')
+            .leftJoinAndSelect('record.queryStrings', 'queryString')
+            .leftJoinAndSelect('record.formDatas', 'formData')
             .where(whereStr, parameters);
 
         if (needHistory) {
@@ -112,7 +162,9 @@ export class RecordService {
         const connection = await ConnectionManager.getInstance();
         let rep = connection.getRepository(Record).createQueryBuilder('record');
         if (includeHeaders) {
-            rep = rep.leftJoinAndSelect('record.headers', 'header');
+            rep = rep.leftJoinAndSelect('record.headers', 'header')
+                .leftJoinAndSelect('record.queryStrings', 'queryString')
+                .leftJoinAndSelect('record.formDatas', 'formData');
         }
         return await rep.where('record.id=:id', { id: id }).getOne();
     }
@@ -121,26 +173,40 @@ export class RecordService {
         const connection = await ConnectionManager.getInstance();
         let rep = connection.getRepository(Record).createQueryBuilder('record');
         if (includeHeaders) {
-            rep = rep.leftJoinAndSelect('record.headers', 'header');
+            rep = rep.leftJoinAndSelect('record.headers', 'header')
+                .leftJoinAndSelect('record.queryStrings', 'queryString')
+                .leftJoinAndSelect('record.formDatas', 'formData');
         }
         return await rep.where('record.pid=:pid', { pid: id }).getMany();
     }
 
     static async create(record: Record, user: User): Promise<ResObject> {
-        record.sort = await RecordService.getMaxSort();
-        RecordService.adjustHeaders(record);
-        return await RecordService.save(record, user);
+        record.sort = await this.getMaxSort();
+        this.adjustAttachs(record.headers);
+        this.adjustAttachs(record.formDatas);
+        this.adjustAttachs(record.queryStrings);
+        return await this.save(record, user);
     }
 
     static async update(record: Record, user: User): Promise<ResObject> {
         const connection = await ConnectionManager.getInstance();
-        const recordInDB = await RecordService.getById(record.id, true);
+        const recordInDB = await this.getById(record.id, true);
 
-        if (recordInDB && recordInDB.headers.length > 0) {
-            await connection.getRepository(Header).remove(recordInDB.headers);
+        if (recordInDB) {
+            if ((recordInDB.headers || []).length > 0) {
+                await connection.getRepository(Header).remove(recordInDB.headers);
+            }
+            if ((recordInDB.queryStrings || []).length > 0) {
+                await connection.getRepository(QueryString).remove(recordInDB.queryStrings);
+            }
+            if ((recordInDB.formDatas || []).length > 0) {
+                await connection.getRepository(BodyFormData).remove(recordInDB.formDatas);
+            }
         }
-        RecordService.adjustHeaders(record);
-        return await RecordService.save(record, user);
+        this.adjustAttachs(record.headers);
+        this.adjustAttachs(record.formDatas);
+        this.adjustAttachs(record.queryStrings);
+        return await this.save(record, user);
     }
 
     static async deleteFolder(id: string): Promise<ResObject> {
@@ -159,7 +225,11 @@ export class RecordService {
     }
 
     static async deleteRecord(id: string): Promise<ResObject> {
-        await HeaderService.deleteForRecord(id);
+        await Promise.all([
+            HeaderService.deleteForRecord(id),
+            QueryStringService.deleteForRecord(id),
+            FormDataService.deleteForRecord(id)
+        ]);
 
         const connection = await ConnectionManager.getInstance();
         await connection.transaction(async manager => {
@@ -169,13 +239,16 @@ export class RecordService {
                 .where('record.id=:id', { id: id })
                 .execute();
         });
-        return { success: true, message: Message.recordDeleteSuccess };
+        return { success: true, message: Message.get('recordDeleteSuccess') };
     }
 
-    private static adjustHeaders(record: Record) {
-        record.headers.forEach((header, index) => {
-            header.id = header.id || StringUtil.generateUID();
-            header.sort = index;
+    private static adjustAttachs<T extends { id: string, sort: number }>(attachs: T[]) {
+        if (!attachs) {
+            return;
+        }
+        attachs.forEach((attach, index) => {
+            attach.id = attach.id || StringUtil.generateUID();
+            attach.sort = index;
         });
     }
 
@@ -202,12 +275,12 @@ export class RecordService {
                 .update(Record, { 'collectionId': collectionId, 'pid': folderId, 'sort': newSort })
                 .execute();
         });
-        return { success: true, message: Message.recordSortSuccess };
+        return { success: true, message: Message.get('recordSortSuccess') };
     }
 
     private static async save(record: Record, user: User): Promise<ResObject> {
         if (!record.name) {
-            return { success: false, message: Message.recordCreateFailedOnName };
+            return { success: false, message: Message.get('recordCreateFailedOnName') };
         }
         if (!record.id) {
             record.id = StringUtil.generateUID();
@@ -219,7 +292,7 @@ export class RecordService {
                 await manager.save(RecordService.createRecordHistory(record, user));
             }
         });
-        return { success: true, message: Message.recordSaveSuccess };
+        return { success: true, message: Message.get('recordSaveSuccess') };
     }
 
     private static toTree(records: Record[], parent?: Record, pushedRecord?: Array<string>): Record[] {
@@ -268,12 +341,18 @@ export class RecordService {
         Reflect.deleteProperty(history.record, 'doc');
         Reflect.deleteProperty(history.record, 'history');
         Reflect.deleteProperty(history.record, 'children');
-        history.record.headers = record.headers.map(h => {
-            const header = { ...h };
-            Reflect.deleteProperty(header, 'record');
-            return header;
-        });
+        history.record.headers = this.deleteRecordForCascade(record.headers || []);
+        history.record.queryStrings = this.deleteRecordForCascade(record.queryStrings || []);
+        history.record.formDatas = this.deleteRecordForCascade(record.formDatas || []);
         return history;
+    }
+
+    static deleteRecordForCascade<T extends object>(cascades: T[]) {
+        return (cascades || []).map(c => {
+            const cascade = Object.assign({}, c);
+            Reflect.deleteProperty(cascade, 'record');
+            return cascade;
+        });
     }
 
     private static async clearHistories(manager: EntityManager, rid: string): Promise<any> {
@@ -281,5 +360,85 @@ export class RecordService {
             .where('targetId=:rid', { rid })
             .delete()
             .execute();
+    }
+
+    private static async findAllParentFolders(record: Record): Promise<Record[]> {
+        const parents = new Array<Record>();
+        const findParent = async (id: string) => {
+            const p = await this.getById(id, true);
+            if (p) {
+                parents.splice(0, 0, p);
+                if (p.pid) {
+                    findParent(p.pid);
+                }
+            }
+        };
+        await findParent(record.pid);
+        return parents;
+    }
+
+    static async combineScriptAndHeaders(record: Record): Promise<Record> {
+        const { globalFunction } = (await ProjectService.getProjectByCollectionId(record.collection.id)) || { globalFunction: '' };
+        const parents = await this.findAllParentFolders(record);
+
+        const prescript = `
+            ${globalFunction || ''};
+            ${record.collection ? record.collection.compatibleCommonPreScript() : ''};
+            ${parents.map(p => p.prescript || '').join(';\n')};
+            ${record.prescript || ''};
+        `;
+
+        const test = `
+            ${globalFunction || ''};
+            ${record.collection.commonTest()};
+            ${parents.map(p => p.test || '').join(';\n')};
+            ${record.test || ''};
+        `;
+
+        const parentHeaders = new Array<Header>();
+        parents.forEach(p => parentHeaders.push(...p.headers));
+
+        return {
+            ...record,
+            headers: [...record.collection.commonHeaders().map(h => HeaderService.fromDto(h)), ...parentHeaders, ...record.headers],
+            prescript,
+            test
+        };
+    }
+
+    static async prepareRecordsForRun(records: Record[], envId: string, cm: ConsoleMessage, orderIds?: string, trace?: (msg: string) => void): Promise<RecordEx[]> {
+        const vid = StringUtil.generateUID();
+        const env = await EnvironmentService.get(envId, true);
+        const envName = env ? env.name : '';
+        cm.push(`Get environment info for ${envName || 'No Environment'}`);
+        const envVariables = {};
+        ((env ? env.variables : []) || []).filter(v => v.isActive).forEach(v => envVariables[v.key] = v.value);
+
+        let recordExs: RecordEx[] = [];
+
+        for (let r of records) {
+            cm.push('Combine scripts');
+            let newRecord = { ...(await RecordService.combineScriptAndHeaders(r)) };
+            cm.push('Get project info');
+            const { id: pid } = (await ProjectService.getProjectByCollectionId(r.collection.id)) || { id: '' };
+            cm.push('Apply environment variables');
+            newRecord = await VariableService.applyVariableForRecord(envId, newRecord);
+            recordExs.push({ ...newRecord, pid, envId, envName, envVariables, vid, param: '', trace });
+        }
+
+        recordExs = _.sortBy(recordExs, 'name');
+        const recordDict = _.keyBy(recordExs, 'id');
+        cm.push('Sort records');
+        const orderRecords = (orderIds || '').split(';').map(i => i.includes(':') ? i.substr(0, i.length - 2) : i).filter(r => recordDict[r]).map(r => recordDict[r]);
+        return _.unionBy(orderRecords, recordExs, 'id');
+    }
+
+    static generateRequestInfo(record: Record): string {
+        return `                method: ${record.method}
+                url: ${record.url}
+                headers: ${record.headers.map(h => `${h.key || ''}:${h.value || ''}`).join('\n                         ')}
+                
+                body: ${record.body || ''}
+                form: ${(record.formDatas || []).map(f => `${f.key || ''}:${f.value || ''}`).join('\n                      ')}`;
     }
 }

@@ -5,13 +5,14 @@ import { KeyValueEditType, KeyValueEditMode } from '../../../common/custom_type'
 import { bodyTypes } from '../../../common/body_type';
 import { defaultBodyType, defaultReqTabKey } from '../../../common/constants';
 import { StringUtil } from '../../../utils/string_util';
-import { testSnippets } from '../../../common/test_snippet';
+import { getTestSnippets } from '../../../common/test_snippet';
 import { getActiveRecordSelector, getReqActiveTabKeySelector, getHeadersEditModeSelector } from './selector';
 import { actionCreator } from '../../../action/index';
 import { UpdateDisplayRecordType } from '../../../action/record';
 import { State } from '../../../state/index';
 import { DtoRecord } from '../../../../../api/interfaces/dto_record';
 import { SwitchHeadersEditModeType } from '../../../action/ui';
+import Msg from '../../../locales';
 
 interface RequestTabExtraStateProps {
 
@@ -72,10 +73,22 @@ class RequestTabExtra extends React.Component<RequestTabExtraProps, RequestTabEx
         changeRecord({ ...record, bodyType, headers });
     }
 
+    private onBeautifyBody = () => {
+        let bodyType = this.currentBodyType();
+        bodyType = bodyType === 'application/json' ? 'json' : bodyType;
+        const { record, changeRecord } = this.props;
+        changeRecord({ ...record, body: StringUtil.beautify(record.body || '', bodyType) });
+    }
+
+    private onBeautifyParam = () => {
+        const { record, changeRecord } = this.props;
+        changeRecord({ ...record, parameters: StringUtil.beautify(record.parameters || '', 'json') });
+    }
+
     private currentBodyType = () => this.props.record.bodyType || defaultBodyType;
 
     private onSelectSnippet = (e) => {
-        const snippet = testSnippets[e.key];
+        const snippet = getTestSnippets()[e.key];
         const { record, changeRecord } = this.props;
         const test = record.test && record.test.length > 0 ? (`${record.test}\n\n${snippet}`) : snippet;
         changeRecord({ ...record, test });
@@ -83,7 +96,7 @@ class RequestTabExtra extends React.Component<RequestTabExtraProps, RequestTabEx
 
     private snippetsMenu = (
         <Menu onClick={this.onSelectSnippet}>
-            {Object.keys(testSnippets).map(s => <Menu.Item key={s}>{s}</Menu.Item>)}
+            {Object.keys(getTestSnippets()).map(s => <Menu.Item key={s}>{s}</Menu.Item>)}
         </Menu>
     );
 
@@ -95,18 +108,24 @@ class RequestTabExtra extends React.Component<RequestTabExtraProps, RequestTabEx
         switch (activeTabKey) {
             case 'body': {
                 return (
-                    <Dropdown overlay={this.getBodyTypeMenu()} trigger={['click']} style={{ width: 200 }}>
-                        <a className="ant-dropdown-link" href="#">
-                            {this.currentBodyType()} <Icon type="down" />
-                        </a>
-                    </Dropdown>
+                    <span>
+                        <Button className="tab-extra-button" style={{ marginRight: 12 }} onClick={this.onBeautifyBody}>{Msg('Collection.Beautify')}</Button>
+                        <Dropdown overlay={this.getBodyTypeMenu()} trigger={['click']} style={{ width: 200 }}>
+                            <a className="ant-dropdown-link" href="#">
+                                {this.currentBodyType()} <Icon type="down" />
+                            </a>
+                        </Dropdown>
+                    </span>
                 );
+            }
+            case 'parameters': {
+                return <Button className="tab-extra-button" onClick={this.onBeautifyParam}>{Msg('Collection.Beautify')}</Button>;
             }
             case 'test': {
                 return (
                     <Dropdown overlay={this.snippetsMenu} trigger={['click']}>
                         <a className="ant-dropdown-link" href="#">
-                            Snippets <Icon type="down" />
+                            {Msg('Collection.Snippets')} <Icon type="down" />
                         </a>
                     </Dropdown>
                 );

@@ -7,7 +7,7 @@ import RecordItem from './record_item';
 import CollectionItem from './collection_item';
 import { DtoRecord } from '../../../../../api/interfaces/dto_record';
 import * as _ from 'lodash';
-import { DtoCollection } from '../../../../../api/interfaces/dto_collection';
+import { DtoCollection, DtoCommonSetting } from '../../../../../api/interfaces/dto_collection';
 import { RecordCategory } from '../../../common/record_category';
 import { actionCreator } from '../../../action';
 import { DeleteCollectionType, SaveCollectionType, SelectedProjectChangedType, CollectionOpenKeysType } from '../../../action/collection';
@@ -18,8 +18,11 @@ import { ProjectSelectedDialogMode, ProjectSelectedDialogType } from '../../../c
 import { getProjectsIdNameStateSelector, getDisplayCollectionSelector } from './selector';
 import { newCollectionName, allProject } from '../../../common/constants';
 import RecordTimeline from '../../../components/record_timeline';
-import './style/index.less';
 import { ShowTimelineType, CloseTimelineType } from '../../../action/ui';
+import CommonSettingDialog from '../../../components/common_setting_dialog';
+import Msg from '../../../locales';
+import './style/index.less';
+import LocalesString from '../../../locales/string';
 
 const SubMenu = Menu.SubMenu;
 const MenuItem = Menu.Item;
@@ -85,6 +88,14 @@ interface CollectionListState {
     newCollectionName: string;
 
     shareCollectionId: string;
+
+    isCommonSettingDlgOpen: boolean;
+
+    currentOperatedCollection?: DtoCollection;
+
+    currentOperatedFolder?: DtoRecord;
+
+    commonSettingType: 'Collection' | 'Folder';
 }
 
 class CollectionList extends React.Component<CollectionListProps, CollectionListState> {
@@ -98,8 +109,10 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
         this.state = {
             projectSelectedDlgMode: ProjectSelectedDialogType.create,
             isProjectSelectedDlgOpen: false,
-            newCollectionName: newCollectionName,
-            shareCollectionId: ''
+            newCollectionName: newCollectionName(),
+            shareCollectionId: '',
+            isCommonSettingDlgOpen: false,
+            commonSettingType: 'Collection'
         };
     }
 
@@ -137,15 +150,13 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
 
     private changeFolderName = (folder: DtoRecord, name: string) => {
         if (name.trim() !== '' && name !== folder.name) {
-            folder.name = name;
-            this.props.updateRecord(folder);
+            this.props.updateRecord({ ...folder, name });
         }
     }
 
     private changeCollectionName = (collection: DtoCollection, name: string) => {
         if (name.trim() !== '' && name !== collection.name) {
-            collection.name = name;
-            this.props.updateCollection(collection);
+            this.props.updateCollection({ ...collection, name });
         }
     }
 
@@ -188,24 +199,47 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
         const collection: DtoCollection = {
             id: StringUtil.generateUID(),
             name: this.state.newCollectionName,
+            commonPreScript: '',
+            commonSetting: { prescript: '', test: '', headers: [] },
             projectId: this.state.selectedProjectInDlg,
             description: ''
         };
         this.props.saveCollection(collection);
-        this.setState({ ...this.state, isProjectSelectedDlgOpen: false, newCollectionName, selectedProjectInDlg: undefined });
+        this.setState({ ...this.state, isProjectSelectedDlgOpen: false, newCollectionName: newCollectionName(), selectedProjectInDlg: undefined });
     }
 
     private duplicateRecord = (record: DtoRecord) => {
         let headers = record.headers;
+        let queryStrings = record.queryStrings;
+        let formDatas = record.formDatas;
         if (headers) {
             headers = headers.map(h => ({ ...h, id: StringUtil.generateUID() }));
         }
-        this.props.duplicateRecord({ ...record, id: StringUtil.generateUID(), name: `${record.name}.copy`, headers });
+        if (queryStrings) {
+            queryStrings = queryStrings.map(q => ({ ...q, id: StringUtil.generateUID() }));
+        }
+        if (formDatas) {
+            formDatas = formDatas.map(q => ({ ...q, id: StringUtil.generateUID() }));
+        }
+        this.props.duplicateRecord({ ...record, id: StringUtil.generateUID(), name: `${record.name}.copy`, headers, queryStrings, formDatas });
     }
 
     private shareCollection = () => {
         // TODO: share
         console.log('share');
+    }
+
+    private saveCommonSetting = (commonSetting: DtoCommonSetting) => {
+        const { currentOperatedCollection, currentOperatedFolder, commonSettingType } = this.state;
+        if (!currentOperatedCollection && !currentOperatedFolder) {
+            return;
+        }
+        if (commonSettingType === 'Collection') {
+            this.props.updateCollection({ ...currentOperatedCollection, commonSetting });
+        } else {
+            this.props.updateRecord({ ...currentOperatedFolder, ...commonSetting });
+        }
+        this.setState({ ...this.state, isCommonSettingDlgOpen: false });
     }
 
     private loopRecords = (data: DtoRecord[], cid: string, inFolder: boolean = false) => {
@@ -218,18 +252,23 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
                 const isOpen = openKeys.indexOf(r.id) > -1;
                 const children = _.remove(data, (d) => d.pid === r.id);
                 return (
-                    <SubMenu className="folder" key={r.id} title={(
-                        <RecordFolder
-                            ref={ele => this.folderRefs[r.id] = ele}
-                            folder={{ ...r }}
-                            isOpen={isOpen}
-                            deleteRecord={() => deleteRecord(r.id, records[cid])}
-                            createRecord={this.createRecord}
-                            onNameChanged={(name) => this.changeFolderName(r, name)}
-                            moveRecordToFolder={this.moveRecordToFolder}
-                            moveToCollection={this.moveToCollection}
-                        />
-                    )}>
+                    <SubMenu
+                        className="folder"
+                        key={r.id}
+                        title={(
+                            <RecordFolder
+                                ref={ele => this.folderRefs[r.id] = ele}
+                                folder={{ ...r }}
+                                isOpen={isOpen}
+                                deleteRecord={() => deleteRecord(r.id, records[cid])}
+                                createRecord={this.createRecord}
+                                onNameChanged={(name) => this.changeFolderName(r, name)}
+                                moveRecordToFolder={this.moveRecordToFolder}
+                                moveToCollection={this.moveToCollection}
+                                editCommonSetting={() => this.setState({ ...this.state, isCommonSettingDlgOpen: true, commonSettingType: 'Folder', currentOperatedFolder: r })}
+                            />
+                        )}
+                    >
                         {this.loopRecords(children, cid, true)}
                     </SubMenu>
                 );
@@ -261,6 +300,33 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
         );
     }
 
+    private get commonSettingDialog() {
+        const { isCommonSettingDlgOpen, currentOperatedCollection, currentOperatedFolder, commonSettingType } = this.state;
+        let commonSetting: DtoCommonSetting;
+
+        if (commonSettingType === 'Collection') {
+            if (!currentOperatedCollection) {
+                return;
+            }
+            commonSetting = { ...currentOperatedCollection.commonSetting, prescript: currentOperatedCollection.commonSetting ? currentOperatedCollection.commonSetting.prescript : currentOperatedCollection.commonPreScript };
+        } else {
+            if (!currentOperatedFolder) {
+                return;
+            }
+            commonSetting = { prescript: currentOperatedFolder.prescript || '', headers: currentOperatedFolder.headers || [], test: currentOperatedFolder.test || '' };
+        }
+
+        return (
+            <CommonSettingDialog
+                type={commonSettingType}
+                isOpen={isCommonSettingDlgOpen}
+                onOk={this.saveCommonSetting}
+                commonSetting={commonSetting}
+                onCancel={() => this.setState({ ...this.state, isCommonSettingDlgOpen: false })}
+            />
+        );
+    }
+
     private get projectSelectedDialog() {
         const { projectSelectedDlgMode, isProjectSelectedDlgOpen } = this.state;
         const description = ProjectSelectedDialogType.getDescription(projectSelectedDlgMode);
@@ -268,15 +334,13 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
             <Modal
                 title={ProjectSelectedDialogType.getTitle(projectSelectedDlgMode)}
                 visible={isProjectSelectedDlgOpen}
-                okText="OK"
-                cancelText="Cancel"
                 onOk={ProjectSelectedDialogType.isCreateMode(projectSelectedDlgMode) ? this.createCollection : this.shareCollection}
                 onCancel={() => this.setState({ ...this.state, isProjectSelectedDlgOpen: false })}
             >
                 {
                     ProjectSelectedDialogType.isCreateMode(projectSelectedDlgMode) ? (
                         <div>
-                            <div style={{ marginBottom: '8px' }}>Enter new collection name:</div>
+                            <div style={{ marginBottom: '8px' }}>{Msg('Collection.EnterNewCollectionName')}</div>
                             <Input spellCheck={false} ref={ele => this.newCollectionNameRef = ele} style={{ width: '100%', marginBottom: '8px' }} value={this.state.newCollectionName} onChange={e => this.setState({ ...this.state, newCollectionName: e.currentTarget.value })} />
                         </div>
                     ) : ''
@@ -287,79 +351,97 @@ class CollectionList extends React.Component<CollectionListProps, CollectionList
                     allowClear={true}
                     style={{ width: '100%' }}
                     dropdownStyle={{ maxHeight: 500, overflow: 'auto' }}
-                    placeholder="Please select project"
+                    placeholder={LocalesString.get('Collection.SelectProject')}
                     treeDefaultExpandAll={true}
                     value={this.state.selectedProjectInDlg}
                     onChange={(e) => this.setState({ ...this.state, selectedProjectInDlg: e })}
-                    treeData={this.props.projects.map(t => ({ key: t.id, value: t.id, label: t.name }))} />
+                    treeData={this.props.projects.map(t => ({ key: t.id, value: t.id, label: t.name }))}
+                />
             </Modal>
         );
     }
 
-    render() {
+    private get collectionMenu() {
         const { collections, records, activeKey, openKeys, deleteCollection, openKeysChanged, activeRecord } = this.props;
 
         return (
-            <div className="collection-panel">
-                <div className="small-toolbar">
-                    <span>Project:</span>
-                    <span>
-                        <Dropdown overlay={this.getProjectMenu()} trigger={['click']} style={{ width: 200 }}>
-                            <a className="ant-dropdown-link" href="#">
-                                {this.getCurrentProject().name} <Icon type="down" />
-                            </a>
-                        </Dropdown>
-                    </span>
-                    <Tooltip mouseEnterDelay={1} placement="bottom" title="create collection">
-                        <Button className="icon-btn" type="primary" icon="folder-add" onClick={this.addCollection} />
-                    </Tooltip>
-                </div>
-                <div className="collection-tree-container">
-                    <PerfectScrollbar>
-                        <Menu
-                            className="collection-tree"
-                            onOpenChange={openKeysChanged}
-                            mode="inline"
-                            inlineIndent={0}
-                            openKeys={openKeys}
-                            selectedKeys={[activeKey]}
-                            onSelect={param => activeRecord(param.item.props.data)}
-                        >
-                            {
-                                collections.map(c => {
-                                    const recordCount = _.values(records[c.id]).filter(r => r.category === RecordCategory.record).length;
-                                    let sortRecords = _.chain(records[c.id]).values<DtoRecord>().sortBy(['category', 'name']).value();
+            <div className="collection-tree-container">
+                <PerfectScrollbar>
+                    <Menu
+                        className="collection-tree"
+                        onOpenChange={openKeysChanged}
+                        mode="inline"
+                        inlineIndent={0}
+                        openKeys={openKeys}
+                        selectedKeys={[activeKey]}
+                        onSelect={param => activeRecord(param.item.props.data)}
+                    >
+                        {
+                            collections.map(c => {
+                                const recordCount = _.values(records[c.id]).filter(r => r.category === RecordCategory.record).length;
+                                let sortRecords = _.chain(records[c.id]).values<DtoRecord>().sortBy(['category', 'name']).value();
 
-                                    return (
-                                        <SubMenu
-                                            className={`${c.id !== collections[0].id ? 'collection-separator-line' : ''} collection-item`}
-                                            key={c.id}
-                                            title={(
-                                                <CollectionItem
-                                                    collection={{ ...c }}
-                                                    recordCount={recordCount}
-                                                    onNameChanged={(name) => this.changeCollectionName(c, name)}
-                                                    deleteCollection={() => deleteCollection(c.id)}
-                                                    moveToCollection={this.moveToCollection}
-                                                    createRecord={this.createRecord}
-                                                    shareCollection={id => this.setState({ ...this.state, isProjectSelectedDlgOpen: true, projectSelectedDlgMode: ProjectSelectedDialogType.share, shareCollectionId: id })}
-                                                />
-                                            )}>
-                                            {
-                                                sortRecords.length === 0 ?
-                                                    <div style={{ height: 20 }} /> :
-                                                    this.loopRecords(sortRecords, c.id)
-                                            }
-                                        </SubMenu>
-                                    );
-                                })
-                            }
-                        </Menu>
-                        {collections.length === 0 ? '' : <div className="collection-tree-bottom" />}
-                    </PerfectScrollbar>
-                </div>
+                                return (
+                                    <SubMenu
+                                        className={`${c.id !== collections[0].id ? 'collection-separator-line' : ''} collection-item`}
+                                        key={c.id}
+                                        title={(
+                                            <CollectionItem
+                                                collection={{ ...c }}
+                                                recordCount={recordCount}
+                                                onNameChanged={(name) => this.changeCollectionName(c, name)}
+                                                deleteCollection={() => deleteCollection(c.id)}
+                                                moveToCollection={this.moveToCollection}
+                                                createRecord={this.createRecord}
+                                                shareCollection={id => this.setState({ ...this.state, isProjectSelectedDlgOpen: true, projectSelectedDlgMode: ProjectSelectedDialogType.share, shareCollectionId: id })}
+                                                editCommonSetting={() => this.setState({ ...this.state, isCommonSettingDlgOpen: true, commonSettingType: 'Collection', currentOperatedCollection: c })}
+                                                editReqStrictSSL={() => this.props.updateCollection({ ...c, reqStrictSSL: !c.reqStrictSSL })}
+                                                editReqFollowRedirect={() => this.props.updateCollection({ ...c, reqFollowRedirect: !c.reqFollowRedirect })}
+                                            />
+                                        )}
+                                    >
+                                        {
+                                            sortRecords.length === 0 ?
+                                                <div style={{ height: 20 }} /> :
+                                                this.loopRecords(sortRecords, c.id)
+                                        }
+                                    </SubMenu>
+                                );
+                            })
+                        }
+                    </Menu>
+                    {collections.length === 0 ? '' : <div className="collection-tree-bottom" />}
+                </PerfectScrollbar>
+            </div>
+        );
+    }
+
+    private get collectionHeader() {
+        return (
+            <div className="small-toolbar">
+                <span>{Msg('App.Project')}:</span>
+                <span>
+                    <Dropdown overlay={this.getProjectMenu()} trigger={['click']} style={{ width: 200 }}>
+                        <a className="ant-dropdown-link" href="#">
+                            {this.getCurrentProject().name} <Icon type="down" />
+                        </a>
+                    </Dropdown>
+                </span>
+                <Tooltip mouseEnterDelay={1} placement="bottom" title={Msg('Collection.Create')}>
+                    <Button className="icon-btn" type="primary" icon="folder-add" onClick={this.addCollection} />
+                </Tooltip>
+            </div>
+        );
+    }
+
+    render() {
+        return (
+            <div className="collection-panel">
+                {this.collectionHeader}
+                {this.collectionMenu}
                 {this.projectSelectedDialog}
                 {this.timelineDialog}
+                {this.commonSettingDialog}
             </div>
         );
     }

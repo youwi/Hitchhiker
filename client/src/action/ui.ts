@@ -15,3 +15,11 @@ export const SwitchHeadersEditModeType = 'switch headers edit mode';
 export const ShowTimelineType = 'show timeline';
 
 export const CloseTimelineType = 'close timeline';
+
+export const DisplayQueryStringType = 'display query string';
+
+export const ToggleRequestDescriptionType = 'toggle request description';
+
+export const BatchCloseType = 'batch close type';
+
+export const TableDisplayType = 'table display type';

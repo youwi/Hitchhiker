@@ -7,6 +7,8 @@ import { DtoHeader } from '../../../../api/interfaces/dto_header';
 import { StringUtil } from '../../utils/string_util';
 import { DtoVariable } from '../../../../api/interfaces/dto_variable';
 import { confirmDlg } from '../../components/confirm_dialog/index';
+import Msg from '../../locales';
+import LocalesString from '../../locales/string';
 
 const getDefaultEnv = (projectId: string) => { return { id: StringUtil.generateUID(), name: '', variables: [], project: { id: projectId } }; };
 
@@ -38,6 +40,8 @@ interface EnvironmentsState {
     environment: DtoEnvironment;
 
     isNew: boolean;
+
+    isEditEnvDlgOpen: boolean;
 }
 
 class EnvironmentTable extends Table<DtoEnvironment> { }
@@ -53,7 +57,8 @@ class Environments extends React.Component<EnvironmentsProps, EnvironmentsState>
         this.state = {
             isNew: false,
             variablesEditMode: KeyValueEditType.keyValueEdit,
-            environment: getDefaultEnv(props.activeProject)
+            environment: getDefaultEnv(props.activeProject),
+            isEditEnvDlgOpen: false
         };
     }
 
@@ -67,9 +72,9 @@ class Environments extends React.Component<EnvironmentsProps, EnvironmentsState>
 
     private showEditDlg = (props: EnvironmentsProps) => {
         const { editedEnvironment, environments, activeProject, isEditEnvDlgOpen } = props;
-        if (isEditEnvDlgOpen) {
+        if (isEditEnvDlgOpen && !this.state.isEditEnvDlgOpen) {
             this.setState({
-                ...this.state, environment: environments.find(e => e.id === editedEnvironment) || getDefaultEnv(activeProject)
+                ...this.state, isEditEnvDlgOpen: true, environment: environments.find(e => e.id === editedEnvironment) || getDefaultEnv(activeProject)
             }, () => this.envNameInput && this.envNameInput.focus());
         }
     }
@@ -80,6 +85,11 @@ class Environments extends React.Component<EnvironmentsProps, EnvironmentsState>
         }
 
         this.state.isNew ? this.props.createEnv(this.state.environment) : this.props.updateEnv(this.state.environment);
+        this.finishEditEnv();
+    }
+
+    private finishEditEnv = () => {
+        this.setState({ ...this.state, isEditEnvDlgOpen: false });
         this.props.editEnvCompleted();
     }
 
@@ -87,12 +97,12 @@ class Environments extends React.Component<EnvironmentsProps, EnvironmentsState>
         const envCopy = { ...env };
         envCopy.name = `${envCopy.name}.copy`;
         envCopy.id = StringUtil.generateUID();
-        envCopy.variables.forEach(v => v.id = StringUtil.generateUID());
+        envCopy.variables = envCopy.variables.map(v => ({ ...v, id: StringUtil.generateUID() }));
         this.props.createEnv(envCopy);
     }
 
     private delEnvironment = (record: DtoEnvironment) => {
-        confirmDlg('environment', () => this.props.delEnv(record.id), 'delete', record.name);
+        confirmDlg(LocalesString.get('Project.DeleteEnvironment'), () => this.props.delEnv(record.id), LocalesString.get('Project.DeleteThisEnvironment', { name: record.name }));
     }
 
     private onHeadersChanged = (variables: DtoHeader[]) => {
@@ -120,7 +130,7 @@ class Environments extends React.Component<EnvironmentsProps, EnvironmentsState>
         return (
             <div>
                 <div className="project-title">
-                    Environments
+                    {Msg('Project.Environments')}
                     <Button
                         className="project-create-btn"
                         type="primary"
@@ -129,7 +139,7 @@ class Environments extends React.Component<EnvironmentsProps, EnvironmentsState>
                         ghost={true}
                         onClick={() => this.editEnv(getDefaultEnv(this.props.activeProject), true)}
                     >
-                        New Environment
+                        {Msg('Project.NewEnvironment')}
                     </Button>
                 </div>
                 <EnvironmentTable
@@ -141,7 +151,7 @@ class Environments extends React.Component<EnvironmentsProps, EnvironmentsState>
                     pagination={false}
                 >
                     <EnvironmentColumn
-                        title="Environment"
+                        title={Msg('Common.Environment')}
                         dataIndex="name"
                         key="name"
                         render={(text, record) => (
@@ -149,31 +159,29 @@ class Environments extends React.Component<EnvironmentsProps, EnvironmentsState>
                         )}
                     />
                     <EnvironmentColumn
-                        title="Action"
+                        title={Msg('Project.Action')}
                         key="action"
                         width={240}
                         render={(text, record) => (
                             <span>
-                                <a href="#" onClick={() => this.editEnv(record, false)}>Edit</a> - <span />
-                                <a href="#" onClick={() => this.duplicate(record)}>Duplicate</a> - <span />
-                                <a href="#" onClick={() => this.delEnvironment(record)}>Delete</a>
+                                <a href="#" onClick={() => this.editEnv(record, false)}>{Msg('Common.Edit')}</a> - <span />
+                                <a href="#" onClick={() => this.duplicate(record)}>{Msg('Common.Duplicate')}</a> - <span />
+                                <a href="#" onClick={() => this.delEnvironment(record)}>{Msg('Common.Delete')}</a>
                             </span>
                         )}
                     />
                 </EnvironmentTable>
                 <Modal
-                    title="Edit Environment"
-                    visible={this.props.isEditEnvDlgOpen}
-                    onCancel={() => this.props.editEnvCompleted()}
-                    okText="Save"
-                    cancelText="Cancel"
+                    title={Msg('Project.EditEnvironment')}
+                    visible={this.state.isEditEnvDlgOpen}
+                    onCancel={() => this.finishEditEnv()}
                     onOk={this.saveEnvironment}
                     width={600}
                 >
                     <div className="env-variable-tip">
-                        {'Variables can be used in Url, Headers with format {{key}}, when send request, {{key}} will be replaced with its corresponding value. For example, you can use different host for environment(QA, Staging, Product) by using variables.'}
+                        {Msg('Project.EnvironmentTip')}
                     </div>
-                    <div style={{ marginBottom: '8px' }}>Environment Name:</div>
+                    <div style={{ marginBottom: '8px' }}>{Msg('Project.EnvironmentName')}</div>
                     <Input
                         ref={ele => this.envNameInput = ele}
                         style={{ width: '100%' }}
@@ -182,7 +190,7 @@ class Environments extends React.Component<EnvironmentsProps, EnvironmentsState>
                         onChange={e => this.onEnvNameChanged(e.currentTarget.value)}
                     />
                     <div className="env-variable-title">
-                        <span>Variables:</span>
+                        <span>{Msg('Project.Variables')}</span>
                         <span className="env-variable-mode-btn">
                             <Button className="tab-extra-button" onClick={this.onHeaderModeChanged}>
                                 {KeyValueEditType.getReverseMode(this.state.variablesEditMode)}

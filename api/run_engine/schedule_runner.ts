@@ -21,6 +21,9 @@ import { DateUtil } from '../utils/date_util';
 import { RecordCategory } from '../common/record_category';
 import { StringUtil } from '../utils/string_util';
 import { Sandbox } from './sandbox';
+import { Setting } from '../utils/setting';
+import { ValidateUtil } from '../utils/validate_util';
+import { BackupService } from '../services/backup_service';
 
 export class ScheduleRunner {
 
@@ -36,6 +39,9 @@ export class ScheduleRunner {
         Log.info('get records by collection ids.');
         const recordDict = await RecordService.getByCollectionIds(_.sortedUniq(schedules.map(s => s.collectionId)));
         await Promise.all(schedules.map(schedule => this.runSchedule(schedule, recordDict[schedule.collectionId], true)));
+
+        Log.info('backup db start.');
+        await BackupService.backupDB();
     }
 
     async runSchedule(schedule: Schedule, records?: Record[], isScheduleRun?: boolean, trace?: (msg: string) => void): Promise<any> {
@@ -62,17 +68,18 @@ export class ScheduleRunner {
         const record = await this.storeRunResult(originRunResults, compareRunResults, schedule, isScheduleRun);
 
         if (trace) {
-            trace(JSON.stringify({ isResult: true, ...record }));
+            trace(JSON.stringify({ isResult: true, ...record, runDate: new Date(record.runDate + ' UTC') }));
         }
 
         Log.info('send mails');
-        const mails = await this.getMailsByMode(schedule);
-        if (!mails || mails.length === 0) {
-            Log.info('no valid email');
-            return;
+        if (!Setting.instance.scheduleMailOnlyForFail || !record.success) {
+            const mails = await this.getMailsByMode(schedule);
+            if (!mails || mails.length === 0) {
+                Log.info('no valid email');
+                return;
+            }
+            await MailService.scheduleMail(mails, await this.getRecordInfoForMail(record, records, schedule.environmentId, schedule.compareEnvironmentId));
         }
-        await MailService.scheduleMail(mails, await this.getRecordInfoForMail(record, records, schedule.environmentId, schedule.compareEnvironmentId));
-
         Log.info(`run schedule finish`);
     }
 
@@ -135,12 +142,39 @@ export class ScheduleRunner {
         scheduleRecord.schedule = schedule;
         scheduleRecord.result = { origin: originRunResults, compare: compareRunResults };
         scheduleRecord.isScheduleRun = isScheduleRun;
-        scheduleRecord.duration = totalRunResults.map(r => r.elapsed).reduce((p, a) => p + a);
+        scheduleRecord.duration = schedule.needOrder ? totalRunResults.map(r => r.elapsed).reduce((p, a) => p + a) : _.max(totalRunResults.map(r => r.elapsed));
+        scheduleRecord.runDate = schedule.lastRunDate;
 
         Log.info('clear redundant records');
         await ScheduleRecordService.clearRedundantRecords(schedule.id);
+
+        Log.info('try clear record content');
+        this.tryClearContent(originRunResults);
+        this.tryClearContent(compareRunResults);
+
         Log.info('create new record');
         return await ScheduleRecordService.create(scheduleRecord);
+    }
+
+    private async tryClearContent(runResults: Array<RunResult | _.Dictionary<RunResult>>) {
+        runResults.forEach(r => {
+            if (this.isRunResult(r)) {
+                this.clearRunResult(r);
+            } else {
+                _.values(r).forEach(s => {
+                    this.clearRunResult(s);
+                });
+            }
+        });
+    }
+
+    private async clearRunResult(runResult: RunResult) {
+        const storeContent = Setting.instance.scheduleStoreContent;
+        const isImg = ValidateUtil.isResImg(runResult.headers);
+        if (isImg || storeContent === 'none' || (storeContent === 'forFail' && this.isSuccess(runResult))) {
+            runResult.body = '';
+            runResult.headers = {};
+        }
     }
 
     private flattenRunResult(res: Array<RunResult | _.Dictionary<RunResult>>) {

@@ -9,6 +9,10 @@ import { UserCollectionService } from './user_collection_service';
 import { ObjectLiteral } from 'typeorm/common/ObjectLiteral';
 import { ScheduleRecordService } from './schedule_record_service';
 import { ScheduleRecord } from '../models/schedule_record';
+import { Period, TimerType } from '../interfaces/period';
+import { DateUtil } from '../utils/date_util';
+import { Log } from '../utils/log';
+import { Setting } from '../utils/setting';
 
 export class ScheduleService {
 
@@ -27,6 +31,7 @@ export class ScheduleService {
         schedule.needOrder = dtoSchedule.needOrder;
         schedule.notification = dtoSchedule.notification;
         schedule.period = dtoSchedule.period;
+        schedule.timer = dtoSchedule.timer;
         schedule.recordsOrder = dtoSchedule.recordsOrder;
         schedule.suspend = dtoSchedule.suspend;
         return schedule;
@@ -42,7 +47,7 @@ export class ScheduleService {
 
     static async save(schedule: Schedule): Promise<any> {
         const connection = await ConnectionManager.getInstance();
-        await connection.getRepository(Schedule).persist(schedule);
+        await connection.getRepository(Schedule).save(schedule);
     }
 
     static async getById(id: string): Promise<Schedule> {
@@ -69,11 +74,25 @@ export class ScheduleService {
         });
         const whereStr = whereStrings.length > 1 ? '(' + whereStrings.join(' OR ') + ')' : whereStrings[0];
 
-        return await connection.getRepository(Schedule)
+        const schedules = await connection.getRepository(Schedule)
             .createQueryBuilder('schedule')
             .leftJoinAndSelect('schedule.scheduleRecords', 'record')
             .where(whereStr, parameters)
             .getMany();
+
+        schedules.forEach(s => {
+            if (s.lastRunDate) {
+                s.lastRunDate = new Date(s.lastRunDate + ' UTC');
+            }
+            s.scheduleRecords.forEach(sr => {
+                if (new Date(sr.runDate).getFullYear() < 2000) {
+                    sr.runDate = sr.createDate;
+                } else {
+                    sr.runDate = new Date(sr.runDate + ' UTC');
+                }
+            });
+        });
+        return schedules;
     }
 
     static async getAllNeedRun(): Promise<Schedule[]> {
@@ -85,13 +104,13 @@ export class ScheduleService {
         const schedule = ScheduleService.fromDto(dtoSchedule);
         schedule.ownerId = owner.id;
         await ScheduleService.save(schedule);
-        return { message: Message.scheduleCreateSuccess, success: true };
+        return { message: Message.get('scheduleCreateSuccess'), success: true };
     }
 
     static async update(dtoSchedule: DtoSchedule): Promise<ResObject> {
         const schedule = ScheduleService.fromDto(dtoSchedule);
         await ScheduleService.save(schedule);
-        return { message: Message.scheduleUpdateSuccess, success: true };
+        return { message: Message.get('scheduleUpdateSuccess'), success: true };
     }
 
     static async delete(id: string): Promise<ResObject> {
@@ -111,18 +130,27 @@ export class ScheduleService {
             .where('id=:id', { id })
             .delete()
             .execute();
-        return { success: true, message: Message.scheduleDeleteSuccess };
+        return { success: true, message: Message.get('scheduleDeleteSuccess') };
     }
 
     static checkScheduleNeedRun(schedule: Schedule): boolean {
-        const isRunFinish = new Date(schedule.lastRunDate + ' UTC').toDateString() === new Date().toDateString(); // TODO: may just toDateString is enough.
-        if (isRunFinish) {
-            return false;
-        }
         const now = new Date();
-        const UTCPeriod = schedule.hour >= 0 ? schedule.period : schedule.period - 1;
-        const UTCDay = UTCPeriod === 1 ? 6 : UTCPeriod - 2;
-        const isPeriodRight = schedule.period === 1 || UTCDay === now.getUTCDay();
-        return isPeriodRight && (schedule.hour < 0 ? 24 + schedule.hour : schedule.hour) === now.getUTCHours();
+        if (schedule.timer === TimerType.Day) {
+            const isRunFinish = schedule.lastRunDate && new Date(schedule.lastRunDate + ' UTC').toDateString() === new Date().toDateString();
+            if (isRunFinish) {
+                return false;
+            }
+            const UTCPeriod = schedule.hour >= 0 ? schedule.period : schedule.period - 1;
+            const UTCDay = UTCPeriod === 1 ? 6 : UTCPeriod - 2;
+            const isPeriodRight = schedule.period === 1 || UTCDay === now.getUTCDay();
+            const scheduleHour = schedule.hour < 0 ? 24 + schedule.hour : schedule.hour;
+            return isPeriodRight && scheduleHour === now.getUTCHours();
+        } else if (schedule.timer === TimerType.Hour) {
+            return !schedule.lastRunDate || DateUtil.diff(schedule.lastRunDate, DateUtil.getUTCDate(), 'h', 3000) >= schedule.hour;
+        } else if (schedule.timer === TimerType.Minute) {
+            const diff = DateUtil.diff(schedule.lastRunDate, DateUtil.getUTCDate(), 'm', 3000);
+            return !schedule.lastRunDate || diff >= schedule.hour;
+        }
+        return false;
     }
 }

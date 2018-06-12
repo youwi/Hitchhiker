@@ -7,6 +7,8 @@ import './style/index.less';
 import { StressRunResult, StressResFailedStatistics } from '../../../../api/interfaces/dto_stress_setting';
 import StressRunDiagram from './stress_run_diagram';
 import { DtoStress } from '../../../../api/interfaces/dto_stress';
+import Msg from '../../locales';
+import LocalesString from '../../locales/string';
 
 interface StressRunHistoryGridProps {
 
@@ -17,6 +19,10 @@ interface StressRunHistoryGridProps {
     records: _.Dictionary<DtoRecord>;
 
     runState?: StressRunResult;
+
+    tableDisplay?: boolean;
+
+    switchDisplayMode(tableDisplay: boolean);
 }
 
 interface StressRecordDisplay {
@@ -43,17 +49,22 @@ class StressRecordColumn extends Table.Column<StressRecordDisplay> { }
 class StressRunHistoryGrid extends React.Component<StressRunHistoryGridProps, StressRunHistoryGridState> {
 
     private expandedInfo = (record: StressRecordDisplay) => {
+        const { records, tableDisplay, switchDisplayMode, stress } = this.props;
         return (
             <StressRunDiagram
                 runState={record.result}
-                records={this.props.records}
+                name={stress.name}
+                records={records}
                 needProgress={false}
+                runDate={record.runDate}
+                displayTable={!!tableDisplay}
+                switchDisplayMode={switchDisplayMode}
             />
         );
     }
 
     public render() {
-        const { runState, records, stressRecords } = this.props;
+        const { runState, stress, records, stressRecords, tableDisplay, switchDisplayMode } = this.props;
         const stressRecordDisplay = !stressRecords || stressRecords.length === 0 ? [] : stressRecords.map((r, i) => ({
             id: i,
             runDate: r.createDate,
@@ -67,8 +78,11 @@ class StressRunHistoryGrid extends React.Component<StressRunHistoryGridProps, St
             <div>
                 <StressRunDiagram
                     runState={runState}
+                    name={stress.name}
                     records={records}
                     needProgress={true}
+                    displayTable={!!tableDisplay}
+                    switchDisplayMode={switchDisplayMode}
                 />
                 <StressRecordTable
                     bordered={true}
@@ -79,12 +93,12 @@ class StressRunHistoryGrid extends React.Component<StressRunHistoryGridProps, St
                     pagination={false}
                 >
                     <StressRecordColumn
-                        title="Run Date"
+                        title={Msg('Common.RunDate')}
                         dataIndex="createDate"
                         render={(text, record) => new Date(record.runDate).toLocaleString()}
                     />
                     <StressRecordColumn
-                        title="Request Count"
+                        title={Msg('Stress.RequestCount')}
                         dataIndex="totalCount"
                     />
                     <StressRecordColumn
@@ -92,7 +106,7 @@ class StressRunHistoryGrid extends React.Component<StressRunHistoryGridProps, St
                         dataIndex="tps"
                     />
                     <StressRecordColumn
-                        title="Failed"
+                        title={Msg('Stress.Failed')}
                         dataIndex="failed"
                         render={this.getFailedDisplay}
                     />
@@ -119,11 +133,11 @@ class StressRunHistoryGrid extends React.Component<StressRunHistoryGridProps, St
     private formatFailedKey = (key: string) => {
         switch (key) {
             case 'm500':
-                return 'Server Error(500)';
+                return LocalesString.get('Stress.ServerError500');
             case 'noRes':
-                return 'No Response';
+                return LocalesString.get('Stress.NoResponse');
             case 'testFailed':
-                return 'Test Failed';
+                return LocalesString.get('Stress.TestFailed');
             default:
                 return '';
         }

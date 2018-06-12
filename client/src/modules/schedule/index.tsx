@@ -10,13 +10,13 @@ import { actionCreator } from '../../action/index';
 import { Layout } from 'antd';
 import Splitter from '../../components/splitter';
 import { UpdateLeftPanelType, ResizeLeftPanelType } from '../../action/ui';
-import { SaveScheduleType, ActiveScheduleType, DeleteScheduleType, RunScheduleType } from '../../action/schedule';
-import ScheduleInfo from './schedule_info';
+import { SaveScheduleType, ActiveScheduleType, DeleteScheduleType, RunScheduleType, SetScheduleRecordsModeType, SetScheduleRecordsPageType, SetScheduleRecordsExcludeNotExistType } from '../../action/schedule';
 import ScheduleRunHistoryGrid from './schedule_run_history_grid';
 import { noEnvironment, unknownName } from '../../common/constants';
 import { DtoRecord } from '../../../../api/interfaces/dto_record';
-import { ScheduleRunState } from '../../state/schedule';
+import { ScheduleRunState, ScheduleRecordsInfo } from '../../state/schedule';
 import { DtoCollection } from '../../../../api/interfaces/dto_collection';
+import { ScheduleRecordsDisplayMode } from '../../common/custom_type';
 
 const { Content, Sider } = Layout;
 
@@ -39,6 +39,8 @@ interface ScheduleStateProps {
     records: _.Dictionary<DtoRecord>;
 
     runState: _.Dictionary<ScheduleRunState>;
+
+    scheduleRecordsInfo: _.Dictionary<ScheduleRecordsInfo>;
 }
 
 interface ScheduleDispatchProps {
@@ -56,6 +58,12 @@ interface ScheduleDispatchProps {
     deleteSchedule(scheduleId: string);
 
     runSchedule(scheduleId: string);
+
+    setScheduleRecordsPage(id: string, page: number);
+
+    setScheduleRecordsMode(id: string, mode: ScheduleRecordsDisplayMode);
+
+    setScheduleRecordsExcludeNotExist(id: string, excludeNotExist: boolean);
 }
 
 type ScheduleProps = ScheduleStateProps & ScheduleDispatchProps;
@@ -79,7 +87,7 @@ class Schedule extends React.Component<ScheduleProps, ScheduleState> {
     }
 
     public render() {
-        const { collapsed, leftPanelWidth, collapsedLeftPanel, createSchedule, selectSchedule, runState, updateSchedule, deleteSchedule, user, activeSchedule, collections, environments, records, schedules, runSchedule } = this.props;
+        const { collapsed, leftPanelWidth, collapsedLeftPanel, createSchedule, selectSchedule, runState, updateSchedule, deleteSchedule, user, activeSchedule, collections, environments, records, schedules, runSchedule, scheduleRecordsInfo, setScheduleRecordsPage, setScheduleRecordsMode, setScheduleRecordsExcludeNotExist } = this.props;
         const schedule = schedules[activeSchedule] || {};
         const envName = this.getEnvName(schedule.environmentId);
         const compareEnvName = this.getEnvName(schedule.compareEnvironmentId);
@@ -92,7 +100,8 @@ class Schedule extends React.Component<ScheduleProps, ScheduleState> {
                     collapsible={true}
                     collapsedWidth="0.1"
                     collapsed={collapsed}
-                    onCollapse={collapsedLeftPanel}>
+                    onCollapse={collapsedLeftPanel}
+                >
                     <ScheduleList
                         schedules={this.scheduleArr}
                         user={user}
@@ -110,23 +119,18 @@ class Schedule extends React.Component<ScheduleProps, ScheduleState> {
                 </Sider>
                 <Splitter resizeCollectionPanel={this.props.resizeLeftPanel} />
                 <Content className="schedule-content">
-                    {activeSchedule && schedule.collectionId ? (
-                        <ScheduleInfo
-                            schedule={schedule}
-                            environmentName={envName}
-                            compareEnvName={compareEnvName}
-                            collectionName={collections[schedule.collectionId].name}
-                        />
-                    ) : ''}
                     <ScheduleRunHistoryGrid
                         schedule={schedule}
-                        scheduleRecords={schedule.scheduleRecords}
+                        scheduleRecordsInfo={scheduleRecordsInfo ? scheduleRecordsInfo[activeSchedule] : undefined}
                         envName={envName}
                         compareEnvName={compareEnvName}
                         envNames={this.getEnvNames()}
                         records={records}
                         isRunning={runState[activeSchedule] ? runState[activeSchedule].isRunning : false}
                         consoleRunResults={runState[activeSchedule] ? runState[activeSchedule].consoleRunResults : []}
+                        setScheduleRecordsPage={setScheduleRecordsPage}
+                        setScheduleRecordsMode={setScheduleRecordsMode}
+                        setScheduleRecordsExcludeNotExist={setScheduleRecordsExcludeNotExist}
                     />
                 </Content>
             </Layout>
@@ -136,7 +140,7 @@ class Schedule extends React.Component<ScheduleProps, ScheduleState> {
 
 const mapStateToProps = (state: State): ScheduleStateProps => {
     const { leftPanelWidth, collapsed } = state.uiState.appUIState;
-    const { schedules, activeSchedule, runState } = state.scheduleState;
+    const { schedules, activeSchedule, runState, scheduleRecordsInfo } = state.scheduleState;
     const records = _.chain(state.collectionState.collectionsInfo.records).values<_.Dictionary<DtoRecord>>().value();
     return {
         leftPanelWidth,
@@ -147,7 +151,8 @@ const mapStateToProps = (state: State): ScheduleStateProps => {
         environments: state.environmentState.environments,
         schedules,
         records: records.length === 0 ? {} : records.reduce((p, c) => ({ ...p, ...c })),
-        runState
+        runState,
+        scheduleRecordsInfo
     };
 };
 
@@ -159,7 +164,10 @@ const mapDispatchToProps = (dispatch: Dispatch<any>): ScheduleDispatchProps => {
         selectSchedule: (scheduleId) => dispatch(actionCreator(ActiveScheduleType, scheduleId)),
         collapsedLeftPanel: (collapsed) => dispatch(actionCreator(UpdateLeftPanelType, collapsed)),
         resizeLeftPanel: (width) => dispatch(actionCreator(ResizeLeftPanelType, width)),
-        runSchedule: (scheduleId) => dispatch(actionCreator(RunScheduleType, scheduleId))
+        runSchedule: (scheduleId) => dispatch(actionCreator(RunScheduleType, scheduleId)),
+        setScheduleRecordsPage: (id, pageNum) => dispatch(actionCreator(SetScheduleRecordsPageType, { id, pageNum })),
+        setScheduleRecordsMode: (id, mode) => dispatch(actionCreator(SetScheduleRecordsModeType, { id, mode })),
+        setScheduleRecordsExcludeNotExist: (id, excludeNotExist) => dispatch(actionCreator(SetScheduleRecordsExcludeNotExistType, { id, excludeNotExist }))
     };
 };
 

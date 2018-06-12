@@ -3,7 +3,9 @@ import ItemWithMenu from '../../components/item_with_menu';
 import { Menu, Icon } from 'antd';
 import { confirmDlg } from '../../components/confirm_dialog/index';
 import { DtoStress } from '../../../../api/interfaces/dto_stress';
+import Msg from '../../locales';
 import './style/index.less';
+import LocalesString from '../../locales/string';
 
 interface StressItemProps {
 
@@ -18,6 +20,8 @@ interface StressItemProps {
     edit();
 
     run();
+
+    stop();
 }
 
 interface StressItemState { }
@@ -27,18 +31,26 @@ class StressItem extends React.Component<StressItemProps, StressItemState> {
     private itemWithMenu: ItemWithMenu;
 
     private getMenu = () => {
+        const { isOwner, isRunning } = this.props;
         return (
             <Menu className="item_menu" onClick={this.onClickMenu}>
                 <Menu.Item key="run">
-                    <Icon type="play-circle-o" /> Run now
-                </Menu.Item>
-                <Menu.Item key="edit">
-                    <Icon type="edit" /> Edit
+                    <Icon type="play-circle-o" /> {Msg('Common.RunNow')}
                 </Menu.Item>
                 {
-                    this.props.isOwner ? (
+                    isRunning ? (
+                        <Menu.Item key="stop">
+                            <Icon type="minus-circle-o" /> {Msg('Common.Stop')}
+                        </Menu.Item>
+                    ) : ''
+                }
+                <Menu.Item key="edit">
+                    <Icon type="edit" /> {Msg('Common.Edit')}
+                </Menu.Item>
+                {
+                    isOwner ? (
                         <Menu.Item key="delete">
-                            <Icon type="delete" /> Delete
+                            <Icon type="delete" /> {Msg('Common.Delete')}
                         </Menu.Item>
                     ) : ''
                 }
@@ -52,10 +64,9 @@ class StressItem extends React.Component<StressItemProps, StressItemState> {
 
     delete = () => {
         confirmDlg(
-            'stress',
+            LocalesString.get('Stress.DeleteStress'),
             () => this.props.delete(),
-            'delete',
-            this.props.stress.name
+            LocalesString.get('Stress.DeleteStress', { name: this.props.stress.name })
         );
     }
 
@@ -65,6 +76,10 @@ class StressItem extends React.Component<StressItemProps, StressItemState> {
 
     run = () => {
         this.props.run();
+    }
+
+    stop = () => {
+        this.props.stop();
     }
 
     public render() {
@@ -77,7 +92,7 @@ class StressItem extends React.Component<StressItemProps, StressItemState> {
                 icon={<Icon className="c-icon" type="code-o" />}
                 isLoading={isRunning}
                 name={name}
-                subName={<div>{`Last run: ${lastRunDate ? new Date(lastRunDate).toLocaleString() : 'never run'}`}</div>}
+                subName={<div>{Msg('Common.LastRun')}{lastRunDate ? new Date(lastRunDate).toLocaleString() : Msg('Common.NeverRun')}</div>}
                 menu={this.getMenu()}
             />
         );

@@ -17,32 +17,32 @@ export class UserService {
         const user = new User();
         user.name = name;
         user.email = email;
-        user.password = password;// TODO: md5, StringUtil.md5(password);
+        user.password = StringUtil.md5Password(password);
         user.id = StringUtil.generateUID();
         return user;
     }
 
     static async save(user: User) {
         const connection = await ConnectionManager.getInstance();
-        await connection.getRepository(User).persist(user);
+        await connection.getRepository(User).save(user);
     }
 
     static async checkUser(email: string, pwd: string): Promise<ResObject> {
         const user = await UserService.getUserByEmail(email, true);
-        if (user && user.password === pwd) {// TODO: md5
+        if (user && user.password === StringUtil.md5Password(pwd)) {
             if (user.isActive) {
                 const userInfo = await UserProjectService.getUserInfo(user);
                 return { success: true, message: '', result: userInfo };
             } else {
-                return { success: false, message: Message.accountNotActive };
+                return { success: false, message: Message.get('accountNotActive') };
             }
         }
-        return { success: false, message: Message.userCheckFailed };
+        return { success: false, message: Message.get('userCheckFailed') };
     }
 
     static async checkUserById(userId: string): Promise<ResObject> {
         const user = await UserService.getUserById(userId, false);
-        return { success: !!user, message: !!user ? '' : Message.userNotExist, result: user };
+        return { success: !!user, message: !!user ? '' : Message.get('userNotExist'), result: user };
     }
 
     static async createUser(name: string, email: string, pwd: string, isAutoGenerate: boolean = false, isTemp: boolean = false): Promise<ResObject> {
@@ -55,7 +55,7 @@ export class UserService {
 
         const isEmailExist = await UserService.IsUserEmailExist(email);
         if (isEmailExist) {
-            return { success: false, message: Message.userEmailRepeat };
+            return { success: false, message: Message.get('userEmailRepeat') };
         }
 
         const user = UserService.create(name, email, pwd);
@@ -71,7 +71,7 @@ export class UserService {
 
         await SampleService.createSampleForUser(user, project.id);
 
-        return { success: true, message: Message.regSuccess, result: user };
+        return { success: true, message: Setting.instance.needRegisterMailConfirm ? Message.get('regSuccessNeedConfirm') : Message.get('regSuccess'), result: user };
     }
 
     static async createUserByEmail(email: string, isAutoGenerate: boolean = false): Promise<ResObject> {
@@ -159,11 +159,11 @@ export class UserService {
         const connection = await ConnectionManager.getInstance();
         await connection.getRepository(User)
             .createQueryBuilder('user')
-            .update({ password: newPwd })
+            .update({ password: StringUtil.md5Password(newPwd) })
             .where('id=:id')
             .setParameter('id', id)
             .execute();
-        return { success: true, message: Message.userChangePwdSuccess };
+        return { success: true, message: Message.get('userChangePwdSuccess') };
     }
 
     static async deleteTempUser() {

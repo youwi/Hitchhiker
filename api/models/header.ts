@@ -21,6 +21,9 @@ export class Header {
     @Column()
     sort: number;
 
+    @Column('text', { nullable: true })
+    description: string;
+
     @ManyToOne(type => Record, record => record.id)
     record: Record;
 }

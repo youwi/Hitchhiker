@@ -14,7 +14,7 @@ export class CollectionService {
 
     static async save(collection: Collection) {
         const connection = await ConnectionManager.getInstance();
-        await connection.getRepository(Collection).persist(collection);
+        await connection.getRepository(Collection).save(collection);
     }
 
     static clone(collection: Collection): Collection {
@@ -29,7 +29,11 @@ export class CollectionService {
         const collection = new Collection();
         collection.id = dtoCollection.id || StringUtil.generateUID();
         collection.name = dtoCollection.name;
+        collection.commonPreScript = dtoCollection.commonPreScript;
+        collection.reqStrictSSL = dtoCollection.reqStrictSSL;
+        collection.reqFollowRedirect = dtoCollection.reqFollowRedirect;
         collection.description = dtoCollection.description;
+        collection.commonSetting = dtoCollection.commonSetting;
         collection.project = new Project();
         collection.project.id = dtoCollection.projectId;
         collection.records = [];
@@ -48,18 +52,22 @@ export class CollectionService {
         collection.owner = owner;
 
         await CollectionService.save(collection);
-        return { success: true, message: Message.collectionCreateSuccess };
+        return { success: true, message: Message.get('collectionCreateSuccess') };
     }
 
     static async update(dtoCollection: DtoCollection, userId: string): Promise<ResObject> {
         const connection = await ConnectionManager.getInstance();
 
         await connection.getRepository(Collection)
-            .createQueryBuilder('collection')
-            .where('id=:id', { id: dtoCollection.id })
-            .update({ name: dtoCollection.name, description: dtoCollection.description })
-            .execute();
-        return { success: true, message: Message.collectionUpdateSuccess };
+            .update({ id: dtoCollection.id }, {
+                name: dtoCollection.name,
+                description: dtoCollection.description,
+                commonPreScript: dtoCollection.commonPreScript,
+                reqStrictSSL: !!dtoCollection.reqStrictSSL,
+                reqFollowRedirect: !!dtoCollection.reqFollowRedirect,
+                commonSetting: dtoCollection.commonSetting
+            });
+        return { success: true, message: Message.get('collectionUpdateSuccess') };
     }
 
     static async delete(id: string): Promise<ResObject> {
@@ -70,7 +78,7 @@ export class CollectionService {
             .where('id=:id', { id })
             .update({ recycle: true })
             .execute();
-        return { success: true, message: Message.collectionDeleteSuccess };
+        return { success: true, message: Message.get('collectionDeleteSuccess') };
     }
 
     static async getOwns(userId: string): Promise<Collection[]> {
@@ -159,7 +167,7 @@ export class CollectionService {
     static async shareCollection(collectionId: string, projectId: string): Promise<ResObject> {
         const origin = await CollectionService.getById(collectionId, true);
         if (!origin) {
-            return { success: false, message: Message.collectionNotExist };
+            return { success: false, message: Message.get('collectionNotExist') };
         }
 
         const target = CollectionService.clone(origin);

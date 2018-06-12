@@ -1,16 +1,21 @@
 import { EditEnvType } from '../action/project';
-import { UIState, AppUIState, appUIDefaultValue, ReqResUIState, uiDefaultValue, SyncState, syncDefaultValue, TimelineState, timelineDefaultValue } from '../state/ui';
+import { UIState, AppUIState, appUIDefaultValue, ReqResUIState, uiDefaultValue, SyncState, syncDefaultValue, TimelineState, timelineDefaultValue, CloseState, closeDefaultValue, StressState } from '../state/ui';
 import { combineReducers } from 'redux';
-import { ResizeLeftPanelType, UpdateLeftPanelType, SelectReqTabType, SelectResTabType, ToggleReqPanelVisibleType, ResizeResHeightType, SwitchHeadersEditModeType, CloseTimelineType } from '../action/ui';
+import { ResizeLeftPanelType, UpdateLeftPanelType, SelectReqTabType, SelectResTabType, ToggleReqPanelVisibleType, ResizeResHeightType, SwitchHeadersEditModeType, CloseTimelineType, DisplayQueryStringType, ToggleRequestDescriptionType, BatchCloseType, TableDisplayType } from '../action/ui';
 import { SyncType, SyncSuccessType, SyncRetryType, ResetSyncMsgType, SyncFailedType } from '../action/index';
 import { RemoveTabType, SaveRecordType } from '../action/record';
+import { SyncUserDataType } from '../action/user';
+import { GlobalVar } from '../utils/global_var';
+import LocalesString from '../locales/string';
 
 export function uiState(state: UIState = uiDefaultValue, action: any): UIState {
     return combineReducers<UIState>({
         appUIState,
         reqResUIState,
         syncState,
-        timelineState
+        timelineState,
+        closeState,
+        stressState
     })(state, action);
 }
 
@@ -34,7 +39,10 @@ function syncState(state: SyncState = syncDefaultValue, action: any): SyncState 
     switch (action.type) {
         case SyncType: {
             const { syncCount, syncItems } = state;
-            return { ...state, syncCount: syncCount + 1, syncItems: [...syncItems, action.value], message: undefined };
+            if (action.syncItem.type !== SyncUserDataType) {
+                GlobalVar.instance.lastSyncDate = new Date();
+            }
+            return { ...state, syncCount: syncCount + 1, syncItems: [...syncItems, action.syncItem], message: undefined };
         }
         case SyncSuccessType: {
             const syncItems = [...state.syncItems];
@@ -43,7 +51,14 @@ function syncState(state: SyncState = syncDefaultValue, action: any): SyncState 
         }
         case SyncRetryType: {
             const { errMsg, delay, time, syncItem } = action.value;
-            return { ...state, message: `${syncItem.type} failed, ${errMsg}, Retry ${time}th time after ${delay}s` };
+            return {
+                ...state, message: LocalesString.get('Common.RetryMessage', {
+                    type: syncItem.type,
+                    errMsg,
+                    time,
+                    delay: delay / 1000
+                })
+            };
         }
         case SyncFailedType: {
             return { ...state, syncCount: state.syncCount - 1, message: action.value };
@@ -92,6 +107,14 @@ function reqResUIState(state: _.Dictionary<ReqResUIState> = {}, action: any): _.
             }
             return state;
         }
+        case DisplayQueryStringType: {
+            const { displayQueryString, recordId } = action.value;
+            return { ...state, [recordId]: { ...state[recordId], displayQueryString } };
+        }
+        case ToggleRequestDescriptionType: {
+            const { displayRequestDescription, recordId } = action.value;
+            return { ...state, [recordId]: { ...state[recordId], displayRequestDescription } };
+        }
         default:
             return state;
     }
@@ -101,6 +124,27 @@ function timelineState(state: TimelineState = timelineDefaultValue, action: any)
     switch (action.type) {
         case CloseTimelineType: {
             return { isShow: false, record: undefined };
+        }
+        default:
+            return state;
+    }
+}
+
+function closeState(state: CloseState = closeDefaultValue, action: any): CloseState {
+    switch (action.type) {
+        case BatchCloseType: {
+            const { activedTab, closeAction } = action.value;
+            return { activedTabBeforeClose: activedTab, closeAction };
+        }
+        default:
+            return state;
+    }
+}
+
+function stressState(state: StressState = {}, action: any): StressState {
+    switch (action.type) {
+        case TableDisplayType: {
+            return { ...state, tableDisplay: action.value };
         }
         default:
             return state;

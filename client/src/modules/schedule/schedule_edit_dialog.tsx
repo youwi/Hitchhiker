@@ -4,7 +4,7 @@ import { DtoSchedule } from '../../../../api/interfaces/dto_schedule';
 import { noEnvironment } from '../../common/constants';
 import { StringUtil } from '../../utils/string_util';
 import * as _ from 'lodash';
-import { Period, PeriodStr } from '../../common/period';
+import { Period, PeriodStr, TimerType, TimerCode } from '../../common/period';
 import { NotificationMode, NotificationStr } from '../../common/notification_mode';
 import { DateUtil } from '../../utils/date_util';
 import { DtoRecord } from '../../../../api/interfaces/dto_record';
@@ -13,6 +13,8 @@ import { RecordCategory } from '../../common/record_category';
 import { DtoCollection } from '../../../../api/interfaces/dto_collection';
 import { DtoEnvironment } from '../../../../api/interfaces/dto_environment';
 import { ParameterType } from '../../common/parameter_type';
+import Msg from '../../locales';
+import LocalesString from '../../locales/string';
 
 const FormItem = Form.Item;
 
@@ -52,6 +54,8 @@ interface ScheduleEditDialogState {
     sortedRecords: MatchableRecord[];
 
     environmentNames: _.Dictionary<string>;
+
+    currentTimerType: TimerType;
 }
 
 type MatchableRecord = DtoRecord & { match: boolean };
@@ -89,7 +93,8 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
             needOrder: props.schedule.needOrder,
             enableSort: !!props.schedule.collectionId,
             sortedRecords,
-            environmentNames
+            environmentNames,
+            currentTimerType: props.schedule.timer
         };
     }
 
@@ -136,6 +141,27 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
         );
     }
 
+    private generateTimerSelect = () => {
+        return (
+            <Select
+                dropdownMenuStyle={{ maxHeight: 200 }}
+                onChange={(id: string) => {
+                    this.setState({ ...this.state, currentTimerType: parseInt(id) });
+                    this.props.form.setFieldsValue({ hour: this.getDefaultHour(parseInt(id)).toString() });
+                }}
+            >
+                {
+                    Object.keys(TimerType).filter(k => StringUtil.isNumberString(k)).map(k =>
+                        <Option key={k} value={k}>{TimerCode.convert(parseInt(k) as TimerType)}</Option>)
+                }
+            </Select>
+        );
+    }
+
+    private getDefaultHour = (type: TimerType) => {
+        return type === TimerType.Day ? 7 : (type === TimerType.Hour ? 1 : 5);
+    }
+
     private generatePeriodSelect = () => {
         return (
             <Select dropdownMenuStyle={{ maxHeight: 300 }}>
@@ -148,11 +174,16 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
     }
 
     private generateHourSelect = () => {
+        const currentTimerType = this.state.currentTimerType;
+        const num = currentTimerType === TimerType.Minute ? 59 : 24;
+        const displayFunc = currentTimerType === TimerType.Day ? DateUtil.getDisplayHour : t => DateUtil.getEveryTime(t, TimerType[currentTimerType]);
         return (
             <Select>
                 {
-                    _.times(24, Number).map(k =>
-                        <Option key={k.toString()} value={k.toString()}>{DateUtil.getDisplayHour(k)}</Option>)
+                    _.times(num, Number).map(k => {
+                        k = currentTimerType === TimerType.Day ? k : k + 1;
+                        return <Option key={k.toString()} value={k.toString()}>{displayFunc(k)}</Option>;
+                    })
                 }
             </Select>
         );
@@ -194,7 +225,7 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
         if (!this.props.form.getFieldValue('needCompare') || this.props.form.getFieldValue('environmentId') !== value) {
             callback();
         } else {
-            callback('Environments should be different.');
+            callback(LocalesString.get('Schedule.EnvironmentMustDifferent'));
         }
     }
 
@@ -222,8 +253,8 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
         return (
             <div>
                 <div>
-                    <span style={{ marginLeft: 32 }}>folder & name</span>
-                    {this.state.needCompare ? <span style={{ float: 'right', marginRight: this.state.sortedRecords.length > 6 ? 32 : 16 }}>match</span> : ''}
+                    <span style={{ marginLeft: 32 }}>{Msg('Schedule.Folder&Name')}</span>
+                    {this.state.needCompare ? <span style={{ float: 'right', marginRight: this.state.sortedRecords.length > 6 ? 32 : 16 }}>{Msg('Schedule.Match')}</span> : ''}
                 </div>
                 <RecordSortList
                     items={this.state.sortedRecords}
@@ -234,14 +265,18 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
                             {
                                 this.state.needCompare ? (
                                     <span className="keyvalue-match">
-                                        <Switch checked={item.match} size="small" onChange={checked => {
-                                            const sortedRecords = [...this.state.sortedRecords];
-                                            const activeRecord = sortedRecords.find(r => r.id === item.id);
-                                            if (activeRecord) {
-                                                activeRecord.match = checked;
-                                            }
-                                            this.setState({ ...this.state, sortedRecords });
-                                        }} />
+                                        <Switch
+                                            checked={item.match}
+                                            size="small"
+                                            onChange={checked => {
+                                                const sortedRecords = [...this.state.sortedRecords];
+                                                const activeRecord = sortedRecords.find(r => r.id === item.id);
+                                                if (activeRecord) {
+                                                    activeRecord.match = checked;
+                                                }
+                                                this.setState({ ...this.state, sortedRecords });
+                                            }}
+                                        />
                                     </span>
                                 ) : ''}
                         </li>
@@ -257,7 +292,7 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
     }
 
     private onOk = () => {
-        this.props.form.validateFields((err, values) => {
+        this.props.form.validateFields({ force: true }, (err, values) => {
             if (err) {
                 return;
             }
@@ -267,7 +302,8 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
                 emails: values.emails.join(';'),
                 environmentId: values.environmentId,
                 notification: Number.parseInt(values.notification),
-                hour: DateUtil.localHourToUTC(Number.parseInt(values.hour)),
+                timer: Number.parseInt(values.timer),
+                hour: this.state.currentTimerType === TimerType.Day ? DateUtil.localHourToUTC(Number.parseInt(values.hour)) : Number.parseInt(values.hour),
                 recordsOrder: this.state.sortedRecords.map(r => `${r.id}:${r.match ? 1 : 0}`).join(';')
             });
             this.reset();
@@ -290,32 +326,31 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
             labelCol: { span: 5 },
             wrapperCol: { span: 17 },
         };
+        const needPeriod = this.state.currentTimerType === TimerType.Day;
         return (
             <Modal
                 visible={isEditDlgOpen}
-                title="Schedule"
-                okText="Save"
-                cancelText="Cancel"
+                title={Msg('App.Scheduler')}
                 width={770}
                 onCancel={this.onCancel}
                 onOk={this.onOk}
             >
                 <Form>
-                    <FormItem {...formItemLayout} label="Name">
+                    <FormItem {...formItemLayout} label={Msg('Common.Name')}>
                         {getFieldDecorator('name', {
                             initialValue: schedule.name,
-                            rules: [{ required: true, message: 'Please enter the name of schedule' }],
+                            rules: [{ required: true, message: LocalesString.get('Schedule.EnterName') }],
                         })(
                             <Input spellCheck={false} />
                             )}
                     </FormItem>
-                    <FormItem {...formItemLayout} required={true} label="Collection">
+                    <FormItem {...formItemLayout} required={true} label={Msg('Schedule.Collection')}>
                         <Row gutter={8}>
                             <Col span={18}>
                                 <FormItem>
                                     {getFieldDecorator('collectionId', {
                                         initialValue: schedule.collectionId,
-                                        rules: [{ required: true, message: 'Please select a collection' }],
+                                        rules: [{ required: true, message: LocalesString.get('Schedule.SelectCollection') }],
                                     })(
                                         this.generateCollectionSelect()
                                         )}
@@ -331,8 +366,9 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
                                             onChange={e => {
                                                 this.setState({ ...this.state, needOrder: (e.target as any).checked });
                                             }}
-                                            disabled={!this.state.enableSort}>
-                                            Sort requests
+                                            disabled={!this.state.enableSort}
+                                        >
+                                            {Msg('Schedule.SortRequests')}
                                         </Checkbox>
                                         )}
                                 </FormItem>
@@ -349,21 +385,32 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
                             </Row>
                         ) : ''
                     }
-                    <FormItem {...formItemLayout} label="Period" >
+                    <FormItem {...formItemLayout} label={Msg('Schedule.Period')} >
                         <Row gutter={8}>
-                            <Col span={12}>
+                            <Col span={needPeriod ? 8 : 12}>
                                 <FormItem>
-                                    {getFieldDecorator('period', {
-                                        initialValue: schedule.period.toString()
+                                    {getFieldDecorator('timer', {
+                                        initialValue: schedule.timer.toString()
                                     })(
-                                        this.generatePeriodSelect()
+                                        this.generateTimerSelect()
                                         )}
                                 </FormItem>
                             </Col>
-                            <Col span={12}>
+                            {needPeriod ? (
+                                <Col span={needPeriod ? 8 : 12}>
+                                    <FormItem>
+                                        {getFieldDecorator('period', {
+                                            initialValue: schedule.period.toString()
+                                        })(
+                                            this.generatePeriodSelect()
+                                            )}
+                                    </FormItem>
+                                </Col>
+                            ) : ''}
+                            <Col span={needPeriod ? 8 : 12}>
                                 <FormItem>
                                     {getFieldDecorator('hour', {
-                                        initialValue: DateUtil.utcHourToLocal(schedule.hour).toString(),
+                                        initialValue: this.state.currentTimerType === TimerType.Day ? DateUtil.utcHourToLocal(schedule.hour).toString() : schedule.hour.toString(),
                                     })(
                                         this.generateHourSelect()
                                         )}
@@ -371,7 +418,7 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
                             </Col>
                         </Row>
                     </FormItem>
-                    <FormItem {...formItemLayout} label="Environment">
+                    <FormItem {...formItemLayout} label={Msg('Common.Environment')}>
                         <Row gutter={8}>
                             <Col span={10}>
                                 <FormItem>
@@ -387,9 +434,14 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
                                     {getFieldDecorator('needCompare', {
                                         initialValue: schedule.needCompare,
                                     })(
-                                        <Checkbox checked={this.state.needCompare} onChange={e => {
-                                            this.setState({ ...this.state, needCompare: (e.target as any).checked });
-                                        }}>compare</Checkbox>
+                                        <Checkbox
+                                            checked={this.state.needCompare}
+                                            onChange={e => {
+                                                this.setState({ ...this.state, needCompare: (e.target as any).checked });
+                                            }}
+                                        >
+                                            {Msg('Schedule.compare')}
+                                        </Checkbox>
                                         )}
                                 </FormItem>
                             </Col>
@@ -407,14 +459,14 @@ class ScheduleEditDialog extends React.Component<ScheduleEditFormProps, Schedule
                             </Col>
                         </Row>
                     </FormItem>
-                    <FormItem {...formItemLayout} label="Notification">
+                    <FormItem {...formItemLayout} label={Msg('Common.Notification')}>
                         {getFieldDecorator('notification', {
                             initialValue: schedule.notification.toString(),
                         })(
                             this.generateNotificationSelect()
                             )}
                     </FormItem>
-                    <FormItem style={{ display: this.state.showEmails ? '' : 'none' }} {...formItemLayout} label="Emails">
+                    <FormItem style={{ display: this.state.showEmails ? '' : 'none' }} {...formItemLayout} label={Msg('Common.Emails')}>
                         {getFieldDecorator('emails', {
                             rules: [{
                                 validator: this.checkEmails,

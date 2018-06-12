@@ -6,6 +6,8 @@ import { DtoRecord } from '../../../../../api/interfaces/dto_record';
 import { confirmDlg } from '../../../components/confirm_dialog/index';
 import { getDefaultRecord } from '../../../state/collection';
 import { StringUtil } from '../../../utils/string_util';
+import Msg from '../../../locales';
+import LocalesString from '../../../locales/string';
 
 interface RecordFolderProps {
 
@@ -22,6 +24,8 @@ interface RecordFolderProps {
     moveRecordToFolder(record: DtoRecord, collectionId?: string, folderId?: string);
 
     moveToCollection(folder: DtoRecord, collectionId?: string);
+
+    editCommonSetting();
 }
 
 interface RecordFolderState {
@@ -52,13 +56,16 @@ class RecordFolder extends React.Component<RecordFolderProps, RecordFolderState>
         return (
             <Menu className="item_menu" onClick={this.onClickMenu}>
                 <Menu.Item key="edit">
-                    <Icon type="edit" /> Rename
+                    <Icon type="edit" /> {Msg('Common.Rename')}
                 </Menu.Item>
                 <Menu.Item key="createRecord">
-                    <Icon type="file" /> Create request
+                    <Icon type="file" /> {Msg('Collection.CreateRequest')}
+                </Menu.Item>
+                <Menu.Item key="commonSetting">
+                    <Icon type="code-o" /> {Msg('Collection.commonSetting')}
                 </Menu.Item>
                 <Menu.Item key="delete">
-                    <Icon type="delete" /> Delete
+                    <Icon type="delete" /> {Msg('Common.Delete')}
                 </Menu.Item>
             </Menu>
         );
@@ -68,7 +75,7 @@ class RecordFolder extends React.Component<RecordFolderProps, RecordFolderState>
         this[e.key]();
     }
 
-    delete = () => confirmDlg('folder', () => this.props.deleteRecord());
+    delete = () => confirmDlg(LocalesString.get('Collection.DeleteFolder'), () => this.props.deleteRecord(), LocalesString.get('Collection.DeleteThisFolder'));
 
     createRecord = () => this.props.createRecord({ ...getDefaultRecord(false), collectionId: this.props.folder.collectionId, pid: this.props.folder.id, id: StringUtil.generateUID() });
 
@@ -78,6 +85,8 @@ class RecordFolder extends React.Component<RecordFolderProps, RecordFolderState>
             this.itemWithMenu.edit();
         }
     }
+
+    commonSetting = () => this.props.editCommonSetting();
 
     private checkTransferFlag = (e, flag) => {
         return e.dataTransfer.types.indexOf(flag) > -1;
@@ -113,7 +122,8 @@ class RecordFolder extends React.Component<RecordFolderProps, RecordFolderState>
 
     public render() {
         return (
-            <div className={this.state.isDragOver ? 'folder-item-container' : ''}
+            <div
+                className={this.state.isDragOver ? 'folder-item-container' : ''}
                 draggable={!this.state.isEdit}
                 onDragStart={this.dragStart}
                 onDragOver={this.dragOver}

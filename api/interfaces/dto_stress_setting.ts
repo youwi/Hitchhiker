@@ -1,4 +1,5 @@
 import { RunResult } from './dto_run_result';
+import { RecordEx } from '../models/record';
 import { StressMessageType, WorkerStatus } from '../common/stress_type';
 
 export interface StressUser {
@@ -15,9 +16,15 @@ export interface StressRequest extends StressUser {
     stressName: string;
 
     testCase: TestCase;
+
+    fileData: Buffer;
 }
 
 export interface TestCase {
+
+    records: RecordEx[];
+
+    envId: string;
 
     requestBodyList?: RequestBody[];
 
@@ -125,6 +132,8 @@ export interface StressResStatisticsTime {
     p90: number;
 
     p95: number;
+
+    stddev: number;
 }
 
 export interface StressResFailedInfo {

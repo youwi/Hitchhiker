@@ -56,7 +56,7 @@ export class ProjectService {
 
     static async getProjects(ids: string[], needOwner: boolean = true, needCollection: boolean = true, needUser: boolean = false, needEnv: boolean = false): Promise<Project[]> {
         if (!ids || ids.length === 0) {
-            throw new Error('at least a project');
+            return [];
         }
 
         const connection = await ConnectionManager.getInstance();
@@ -86,9 +86,9 @@ export class ProjectService {
         const user = await UserService.getUserById(ownerId, true);
         project.members.push(user);
 
-        await connection.getRepository(Project).persist(project);
+        await connection.getRepository(Project).save(project);
 
-        return { success: true, message: Message.projectSaveSuccess };
+        return { success: true, message: Message.get('projectSaveSuccess') };
     }
 
     static async createOwnProject(owner: User): Promise<Project> {
@@ -99,7 +99,7 @@ export class ProjectService {
         project.isMe = true;
         project.members.push(owner);
 
-        return await connection.getRepository(Project).persist(project);
+        return await connection.getRepository(Project).save(project);
     }
 
     static async updateProject(dtoProject: DtoProject): Promise<ResObject> {
@@ -111,14 +111,14 @@ export class ProjectService {
             .update({ name: dtoProject.name, note: dtoProject.note })
             .execute();
 
-        return { success: true, message: Message.projectSaveSuccess };
+        return { success: true, message: Message.get('projectSaveSuccess') };
     }
 
     static async save(project: Project): Promise<ResObject> {
         const connection = await ConnectionManager.getInstance();
-        await connection.getRepository(Project).persist(project);
+        await connection.getRepository(Project).save(project);
 
-        return { success: true, message: Message.projectSaveSuccess };
+        return { success: true, message: Message.get('projectSaveSuccess') };
     }
 
     static async delete(id: string, delCollection?: boolean, delEnv?: boolean): Promise<ResObject> {
@@ -137,7 +137,7 @@ export class ProjectService {
             await manager.remove(project);
         });
 
-        return { success: true, message: Message.projectDeleteSuccess };
+        return { success: true, message: Message.get('projectDeleteSuccess') };
     }
 
     static async createLocalhostMapping(id: string, userId: string, projectId: string, ip: string): Promise<ResObject> {
@@ -148,9 +148,9 @@ export class ProjectService {
         mapping.project = ProjectService.create(projectId);
 
         const connection = await ConnectionManager.getInstance();
-        await connection.getRepository(LocalhostMapping).persist(mapping);
+        await connection.getRepository(LocalhostMapping).save(mapping);
 
-        return { success: true, message: Message.createLocalhostMappingSuccess };
+        return { success: true, message: Message.get('createLocalhostMappingSuccess') };
     }
 
     static async updateLocalhostMapping(id: string, ip: string): Promise<ResObject> {
@@ -162,7 +162,7 @@ export class ProjectService {
             .update({ ip })
             .execute();
 
-        return { success: true, message: Message.updateLocalhostMappingSuccess };
+        return { success: true, message: Message.get('updateLocalhostMappingSuccess') };
     }
 
     static async getLocalhost(userId: string, collectionId: string): Promise<string> {
@@ -191,14 +191,13 @@ export class ProjectService {
             .update({ globalFunction })
             .execute();
 
-        return { success: true, message: Message.updateGlobalFuncSuccess };
+        return { success: true, message: Message.get('updateGlobalFuncSuccess') };
     }
 
     static async getProjectByCollectionId(collectionId: string): Promise<Project> {
         const collection = await CollectionService.getById(collectionId);
         if (collection) {
             return await ProjectService.getProject(collection.project.id, false, false);
-            //return {globalFunc: project ? project.globalFunction || '' : '', projectId: project ? project.id : ''};
         }
         return undefined;
     }

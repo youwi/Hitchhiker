@@ -12,13 +12,19 @@ export const ActiveScheduleType = 'active schedule';
 
 export const RunScheduleType = 'run schedule';
 
+export const SetScheduleRecordsModeType = 'set schedule records display mode';
+
+export const SetScheduleRecordsPageType = 'set schedule records page';
+
+export const SetScheduleRecordsExcludeNotExistType = 'set schedule records statistics exclude not exist';
+
 export const ScheduleChunkDataType = 'schedule chunk data';
 
 export const RunScheduleFulfillType = 'run schedule completely';
 
 export function* saveSchedule() {
     yield takeEvery(SaveScheduleType, function* (action: any) {
-        const channelAction = syncAction({ type: SaveScheduleType, method: action.value.isNew ? HttpMethod.POST : HttpMethod.PUT, url: Urls.getUrl(`schedule`), body: action.value.schedule });
+        const channelAction = syncAction({ type: SaveScheduleType, method: action.value.isNew ? HttpMethod.POST : HttpMethod.PUT, url: Urls.getUrl(`schedule`), body: { ...action.value.schedule, scheduleRecords: [] } });
         yield put(channelAction);
     });
 }

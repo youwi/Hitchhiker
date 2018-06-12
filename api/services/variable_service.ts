@@ -39,6 +39,16 @@ export class VariableService {
             key: StringUtil.applyTemplate(header.key, variables),
             value: StringUtil.applyTemplate(header.value, variables)
         }));
+        record.queryStrings = r.queryStrings.map(queryString => ({
+            ...queryString,
+            key: StringUtil.applyTemplate(queryString.key, variables),
+            value: StringUtil.applyTemplate(queryString.value, variables)
+        }));
+        record.formDatas = r.formDatas.map(formData => ({
+            ...formData,
+            key: StringUtil.applyTemplate(formData.key, variables),
+            value: StringUtil.applyTemplate(formData.value, variables)
+        }));
 
         return record;
     }

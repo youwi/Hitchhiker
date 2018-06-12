@@ -14,7 +14,10 @@ import ResErrorPanel from '../../../components/res_error_panel';
 import { State } from '../../../state/index';
 import { getActiveRecordSelector, getActiveRecordStateSelector, getResHeightSelector, getResActiveTabKeySelector, getIsResPanelMaximumSelector } from './selector';
 import { ResponseState } from '../../../state/collection';
+import { ConsoleMsg } from '../../../../../api/interfaces/dto_res';
+import Msg from '../../../locales';
 import * as _ from 'lodash';
+import { DateUtil } from '../../../utils/date_util';
 
 const TabPane = Tabs.TabPane;
 
@@ -50,13 +53,10 @@ interface ResponsePanelState { }
 
 const ResponseEmptyPanel = (
     <div>
-        <div className="res-non-header">Response</div>
-        <div className="res-non-content">Hit
-            <span>
-                <Icon type="rocket" />
-                Send
-            </span>
-            to get a response.</div>
+        <div className="res-non-header">{Msg('Collection.Response')}</div>
+        <div className="res-non-content">
+            {Msg('Collection.HitToGetResponse', { send: <span className="res-non-content-send"><Icon type="rocket" />{Msg('Common.Send')}</span> })}
+        </div>
     </div>
 );
 
@@ -66,14 +66,18 @@ class ResponsePanel extends React.Component<ResponsePanelProps, ResponsePanelSta
         cookies.map((cookie, index) => <div key={`res-cookie-${index}`}> {cookie} </div>)
     )
 
-    private tabPanelHeaders = (headers: { [key: string]: string; }) => (
+    private tabPanelHeaders = (headers: { [key: string]: string | string[] }) => (
         <ul className="res-tabpanel-list">
             {
-                headers ? Object.keys(headers).map(key => (
-                    <li key={`res-header-${key}`}>
-                        <span className="tabpanel-headers-key">{key}: </span>
-                        <span>{headers[key]}</span>
-                    </li>)
+                headers ? Object.keys(headers).map(key => {
+                    const value = headers[key];
+                    return (
+                        <li key={`res-header-${key}`}>
+                            <span className="tabpanel-headers-key">{key}: </span>
+                            <span>{typeof value === 'string' ? value : value.join(';')}</span>
+                        </li>
+                    );
+                }
                 ) : ''
             }
         </ul>
@@ -84,13 +88,36 @@ class ResponsePanel extends React.Component<ResponsePanelProps, ResponsePanelSta
             {
                 tests ? Object.keys(tests).map(key => (
                     <li key={`res-test-${key}`}>
-                        <Tag color={tests[key] ? successColor : failColor}>{tests[key] ? pass : fail}</Tag>
+                        <Tag color={tests[key] ? successColor : failColor}>{tests[key] ? pass() : fail()}</Tag>
                         <span>{key}</span>
                     </li>)
                 ) : ''
             }
         </ul>
     )
+
+    private tabPanelConsole = (consoleMsgs: ConsoleMsg[]) => {
+        return (
+            <div>
+                {
+                    consoleMsgs.map((m, i) => {
+                        let msg = m.message;
+                        if (typeof m.message === 'object') {
+                            try {
+                                msg = JSON.stringify(m.message);
+                            } catch (e) { msg = e.toString(); }
+                        }
+                        return (
+                            <pre key={i} className={`res-console-p res-console-${m.type}`}>
+                                <span className="res-console-time">{`${DateUtil.getDisplayTime(m.time)}:`}</span>
+                                {m.custom ? <strong>{msg}</strong> : msg}
+                            </pre>
+                        );
+                    })
+                }
+            </div>
+        );
+    }
 
     private getExtraContent = () => {
         const { res, toggleResPanelMaximize, isResPanelMaximum, activeKey } = this.props;
@@ -107,20 +134,22 @@ class ResponsePanel extends React.Component<ResponsePanelProps, ResponsePanelSta
     }
 
     private get normalResponsePanel() {
-        const { res, selectResTab, activeKey } = this.props;
+        const { res, selectResTab, activeKey, height } = this.props;
         if (!this.isRunResult(res)) {
             return <div />;
         }
-        let { body, cookies, headers, tests } = res;
+        let { body, cookies, headers, tests, consoleMsgQueue } = res;
 
         cookies = cookies || [];
         tests = tests || [];
         headers = headers || [];
 
-        const value = StringUtil.beautify(body, headers['Content-Type']);
+        const contentType = StringUtil.getContentTypeFromHeaders(headers);
+        const value = StringUtil.beautify(body, contentType);
         const testKeys = Object.keys(tests);
         const successTestLen = Object.keys(tests).filter(t => tests[t]).length;
         const testsTag = testKeys.length > 0 ? `${successTestLen}/${Object.keys(tests).length}` : '';
+        const isImg = res.headers && res.headers['content-type'] && res.headers['content-type'].indexOf('image/') >= 0;
 
         return (
             <Tabs
@@ -129,23 +158,29 @@ class ResponsePanel extends React.Component<ResponsePanelProps, ResponsePanelSta
                 activeKey={this.props.activeTab}
                 onChange={v => selectResTab(activeKey, v)}
                 animated={false}
-                tabBarExtraContent={this.getExtraContent()}>
-                <TabPane tab="Content" key="content">
-                    <Editor type="json" value={value} height={this.props.height} readOnly={true} />
+                tabBarExtraContent={this.getExtraContent()}
+            >
+                <TabPane tab={Msg('Collection.Content')} key="content">
+                    {isImg ? <img src={value} /> : <Editor type={StringUtil.getEditorType(body, contentType)} value={value} height={height} readOnly={true} />}
                 </TabPane>
-                <TabPane className="display-tab-panel" tab={nameWithTag('Headers', Object.keys(headers).length.toString())} key="headers">
+                <TabPane className="display-tab-panel" tab={nameWithTag(Msg('Collection.Headers'), Object.keys(headers).length.toString())} key="headers">
                     {
                         this.tabPanelHeaders(headers)
                     }
                 </TabPane>
-                <TabPane className="display-tab-panel" tab={nameWithTag('Cookies', cookies.length.toString())} key="cookies">
+                <TabPane className="display-tab-panel" tab={nameWithTag(Msg('Collection.Cookies'), cookies.length.toString())} key="cookies">
                     {
                         this.tabPanelCookie(cookies)
                     }
                 </TabPane>
-                <TabPane className="display-tab-panel" tab={nameWithTag('Test', testsTag, successTestLen === testKeys.length ? 'normal' : 'warning')} key="test">
+                <TabPane className="display-tab-panel" tab={nameWithTag(Msg('Collection.Test'), testsTag, successTestLen === testKeys.length ? 'normal' : 'warning')} key="test">
                     {
                         this.tabPanelTest(tests)
+                    }
+                </TabPane>
+                <TabPane className="display-tab-panel" tab={Msg('Collection.Console')} key="console">
+                    {
+                        this.tabPanelConsole(consoleMsgQueue)
                     }
                 </TabPane>
             </Tabs>
@@ -155,7 +190,7 @@ class ResponsePanel extends React.Component<ResponsePanelProps, ResponsePanelSta
     private getAllParamPanel = (paramArr: Array<any>, res: ResponseState) => {
         return (
             <div>
-                <div className="res-non-header">Response</div>
+                <div className="res-non-header">{Msg('Collection.Response')}</div>
                 <div className="res-panel-allparam">
                     {
                         paramArr.map(p => {
@@ -165,7 +200,7 @@ class ResponsePanel extends React.Component<ResponsePanelProps, ResponsePanelSta
                                 return '';
                             }
                             if (runResult.error) {
-                                return <div><span className="res-panel-allparam-name"> {currParam} </span> - <span className="res-panel-fail">error</span></div>;
+                                return <div><span className="res-panel-allparam-name"> {currParam} </span> - <span className="res-panel-fail">{Msg('Collection.Error')}</span></div>;
                             }
                             let { elapsed, status, statusMessage, tests } = runResult;
                             return <div key={currParam} className="res-panel-allparam-line"><span className="res-panel-allparam-name"> {currParam} </span> - {this.getStatusDesc(status, statusMessage, elapsed)} <span style={{ marginLeft: 16 }}>{this.getTestsDesc(tests)}</span> </div>;
@@ -188,21 +223,21 @@ class ResponsePanel extends React.Component<ResponsePanelProps, ResponsePanelSta
         }
         const testPassNum = _.values(tests).filter(t => t).length;
         if (testPassNum === totalNum) {
-            return <span>Tests: <span className="res-panel-pass">{`ALL ${pass}`}</span></span>;
+            return <span>{Msg('Collection.Tests')}<span className="res-panel-pass">{`ALL ${pass()}`}</span></span>;
         } else if (testPassNum === 0) {
-            return <span>Tests: <span className="res-panel-fail">{`ALL ${fail}`}</span></span>;
+            return <span>{Msg('Collection.Tests')}<span className="res-panel-fail">{`ALL ${fail()}`}</span></span>;
         } else {
-            return <span>Tests: <span className="res-panel-pass">{`${testPassNum} ${pass}`}</span>, <span className="res-panel-fail">{`${totalNum - testPassNum} ${fail}`}</span></span>;
+            return <span>{Msg('Collection.Tests')}<span className="res-panel-pass">{`${testPassNum} ${pass()}`}</span>, <span className="res-panel-fail">{`${totalNum - testPassNum} ${fail()}`}</span></span>;
         }
     }
 
     private getStatusDesc = (status: number, statusMessage: string, elapsed: number) => {
         return (
             <span>
-                <span>Status: </span>
+                <span>{Msg('Collection.Status')}</span>
                 <span className="res-status">{status} {statusMessage}</span>
-                <span style={{ marginLeft: '16px' }}>Time: </span>
-                <span className="res-status">{elapsed}ms</span>
+                <span style={{ marginLeft: '16px' }}>{Msg('Collection.Time')}</span>
+                <span className="res-status">{elapsed}{Msg('Common.MicroSecond')}</span>
             </span>
         );
     }
@@ -239,13 +274,13 @@ const mapStateToProps = (state: State): ResponsePanelStateProps => {
     const record = getActiveRecordSelector()(state);
     const recordState = getActiveRecordStateSelector()(state);
     const activeKey = state.displayRecordsState.activeKey;
-    const { currParam, paramArr } = StringUtil.parseParameters(record.parameters, record.parameterType, recordState.parameter);
+    const { currParam, paramArr } = StringUtil.parseParameters(record.parameters, record.parameterType, recordState.parameter, record.reduceAlgorithm);
     const currParamStr = JSON.stringify(currParam);
     const resState = state.displayRecordsState.responseState[activeKey];
     const res = !resState ? undefined : (paramArr.length === 0 ? resState['runResult'] : (currParam === allParameter ? resState : resState[currParamStr]));
     return {
         activeKey,
-        url: record.url,
+        url: StringUtil.stringifyUrl(record.url || '', record.queryStrings || []),
         isRequesting: recordState.isRequesting,
         res,
         height: getResHeightSelector()(state),

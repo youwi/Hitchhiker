@@ -3,12 +3,11 @@ import { delay } from 'redux-saga';
 import RequestManager, { SyncItem } from '../utils/request_manager';
 import { sendRequest, saveRecord, saveAsRecord, deleteRecord, moveRecord, sendRequestForParam } from './record';
 import { saveProject, quitProject, disbandProject, removeUser, inviteMember, saveEnvironment, delEnvironment, saveLocalhostMapping, saveGlobalFunction, delProjectFile } from './project';
-import { deleteCollection, saveCollection, importPostman } from './collection';
+import { deleteCollection, saveCollection, importData } from './collection';
 import { login, logout, register, findPassword, getUserInfo, changePassword, tempUse, syncUserData } from './user';
 import { storeLocalData, fetchLocalData } from './local_data';
 import { deleteSchedule, saveSchedule, runSchedule } from './schedule';
-import { saveStress, deleteStress, runStress } from './stress';
-import { GlobalVar } from '../utils/global_var';
+import { saveStress, deleteStress, runStress, stopStress } from './stress';
 
 export const SyncType = 'sync';
 
@@ -42,7 +41,7 @@ export function* rootSaga() {
         spawn(storeLocalData),
         spawn(deleteCollection),
         spawn(saveCollection),
-        spawn(importPostman),
+        spawn(importData),
         spawn(sendRequest),
         spawn(sendRequestForParam),
         spawn(saveRecord),
@@ -65,6 +64,7 @@ export function* rootSaga() {
         spawn(saveStress),
         spawn(deleteStress),
         spawn(runStress),
+        spawn(stopStress),
         spawn(syncUserData),
         spawn(sync)
     ];
@@ -83,7 +83,6 @@ function* handleRequest(syncItem: SyncItem) {
     let delayTime = 1000;
     for (let i = 0; i <= Number.MAX_VALUE; i++) {
         try {
-            GlobalVar.instance.lastSyncDate = new Date();
             const res = yield call(RequestManager.sync, syncItem);
             if (res.status === 403) {
                 yield put(actionCreator(SessionInvalidType));

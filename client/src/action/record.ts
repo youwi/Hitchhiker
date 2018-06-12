@@ -4,6 +4,7 @@ import { HttpMethod } from '../common/http_method';
 import { syncAction, actionCreator, SessionInvalidType } from './index';
 import { Urls } from '../utils/urls';
 import * as _ from 'lodash';
+import { RunResult } from '../../../api/interfaces/dto_run_result';
 
 export const AddTabType = 'add tab';
 
@@ -53,12 +54,13 @@ export function* sendRequest() {
         if (!action.value.record.id) {
             record = _.values<any>(value.record)[0];
         }
-        let runResult: any = {};
+        RequestManager.removeCanceledRequest(record.id);
+        let runResult: Partial<RunResult> = {};
         if (isParamReq) {
-            yield all(Object.keys(value.record).map(k => put(actionCreator(SendRequestForParamType, { param: k, content: { environment: action.value.environment, record: value.record[k] } }))));
+            yield all(Object.keys(value.record).map(k => put(actionCreator(SendRequestForParamType, { param: k, content: { environment: action.value.environment, record: { ...value.record[k], history: [] } } }))));
         } else {
             try {
-                const res = yield call(RequestManager.post, Urls.getUrl(`record/run`), value);
+                const res = yield call(RequestManager.post, Urls.getUrl(`record/run`), { ...value, record: { ...value.record, history: [] } });
                 if (res.status === 403) {
                     yield put(actionCreator(SessionInvalidType));
                 }
@@ -66,6 +68,9 @@ export function* sendRequest() {
                     return;
                 }
                 runResult = yield res.json();
+                if (runResult.consoleMsgQueue) {
+                    runResult.consoleMsgQueue.forEach(m => console[m.type] && console[m.type](m.message));
+                }
             } catch (err) {
                 runResult.error = { message: err.message, stack: err.stack };
             }
@@ -77,9 +82,10 @@ export function* sendRequest() {
 export function* sendRequestForParam() {
     yield takeEvery(SendRequestForParamType, function* (action: any) {
         const value = action.value;
-        let runResult: any = {};
+        let runResult: Partial<RunResult> = {};
         try {
-            const res = yield call(RequestManager.post, Urls.getUrl(`record/run`), value.content);
+            RequestManager.removeCanceledRequest(value.content.record.id);
+            const res = yield call(RequestManager.post, Urls.getUrl(`record/run`), { ...value.content, record: { ...value.content.record, history: [] } });
             if (res.status === 403) {
                 yield put(actionCreator(SessionInvalidType));
             }
@@ -87,6 +93,9 @@ export function* sendRequestForParam() {
                 return;
             }
             runResult = yield res.json();
+            if (runResult.consoleMsgQueue) {
+                runResult.consoleMsgQueue.forEach(m => console[m.type] && console[m.type](m.message));
+            }
         } catch (err) {
             runResult.error = { message: err.message, stack: err.stack };
         }
@@ -104,7 +113,7 @@ export function* saveAsRecord() {
 
 function* pushSaveRecordToChannel(action: any) {
     const method = action.value.isNew ? HttpMethod.POST : HttpMethod.PUT;
-    const channelAction = syncAction({ type: SaveRecordType, method: method, url: Urls.getUrl(`record`), body: action.value.record });
+    const channelAction = syncAction({ type: SaveRecordType, method: method, url: Urls.getUrl(`record`), body: { ...action.value.record, history: [] } });
     yield put(channelAction);
 }
 
@@ -117,7 +126,7 @@ export function* deleteRecord() {
 
 export function* moveRecord() {
     yield takeEvery(MoveRecordType, function* (action: any) {
-        const channelAction = syncAction({ type: MoveRecordType, method: HttpMethod.PUT, url: Urls.getUrl(`record`), body: action.value.record });
+        const channelAction = syncAction({ type: MoveRecordType, method: HttpMethod.PUT, url: Urls.getUrl(`record`), body: { ...action.value.record, history: [] } });
         yield put(channelAction);
     });
 }

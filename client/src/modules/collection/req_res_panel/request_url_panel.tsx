@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect, Dispatch, MapStateToPropsFactory } from 'react-redux';
-import { Input, Button, Dropdown, Select, Menu, Modal, TreeSelect, message } from 'antd';
+import { Button, Dropdown, Select, Menu, Modal, TreeSelect, message } from 'antd';
 import { HttpMethod } from '../../../common/http_method';
-import { getActiveRecordSelector, getActiveRecordStateSelector, getActiveEnvIdSelector, getCollectionTreeDataSelector } from './selector';
+import { getActiveRecordSelector, getActiveRecordStateSelector, getActiveEnvIdSelector, getCollectionTreeDataSelector, getActiveReqResUIStateSelector } from './selector';
 import { actionCreator } from '../../../action/index';
 import { SaveRecordType, SaveAsRecordType, SendRequestType, UpdateDisplayRecordType } from '../../../action/record';
 import { State } from '../../../state/index';
@@ -12,6 +12,12 @@ import { StringUtil } from '../../../utils/string_util';
 import { TreeData } from 'antd/lib/tree-select/interface';
 import * as _ from 'lodash';
 import { DtoHeader } from '../../../../../api/interfaces/dto_header';
+import CodeSnippetDialog from '../../../components/code_snippet_dialog';
+import Msg from '../../../locales';
+import LoInput from '../../../locales/input';
+import LocalesString from '../../../locales/string';
+import { DisplayQueryStringType } from '../../../action/ui';
+import { DtoQueryString, DtoBodyFormData } from '../../../../../api/interfaces/dto_variable';
 
 const DButton = Dropdown.Button as any;
 const Option = Select.Option;
@@ -29,6 +35,8 @@ interface RequestUrlPanelStateProps {
     collectionTreeData: TreeData[];
 
     currentParam: string;
+
+    displayQueryString: boolean;
 }
 
 interface RequestUrlPanelDispatchProps {
@@ -40,6 +48,8 @@ interface RequestUrlPanelDispatchProps {
     save(record: DtoRecord, isNew: boolean, oldId?: string);
 
     sendRequest(environment: string, record: DtoRecord | _.Dictionary<DtoRecord>);
+
+    switchQueryStringDisplay(recordId: string, displayQueryString: boolean);
 }
 
 type RequestUrlPanelProps = RequestUrlPanelStateProps & RequestUrlPanelDispatchProps;
@@ -51,6 +61,8 @@ interface RequestUrlPanelState {
     isSaveAsDlgOpen: boolean;
 
     selectedFolderId?: string;
+
+    isCodeSnippetDlgOpen: boolean;
 }
 
 class RequestUrlPanel extends React.Component<RequestUrlPanelProps, RequestUrlPanelState> {
@@ -59,25 +71,28 @@ class RequestUrlPanel extends React.Component<RequestUrlPanelProps, RequestUrlPa
         super(props);
         this.state = {
             isSaveAsDlgOpen: false,
-            isSaveDlgOpen: false
+            isSaveDlgOpen: false,
+            isCodeSnippetDlgOpen: false
         };
     }
 
     shouldComponentUpdate(nextProps: RequestUrlPanelStateProps, nextState: RequestUrlPanelState) {
-        const { record, isRequesting, environment, collectionTreeData } = this.props;
+        const { record, isRequesting, environment, collectionTreeData, displayQueryString } = this.props;
         return record.url !== nextProps.record.url ||
             record.method !== nextProps.record.method ||
             isRequesting !== nextProps.isRequesting ||
             environment !== nextProps.environment ||
             collectionTreeData !== nextProps.collectionTreeData ||
+            displayQueryString !== nextProps.displayQueryString ||
+            !_.isEqual(record.queryStrings, nextProps.record.queryStrings) ||
             !_.isEqual(this.state, nextState);
     }
 
     private getMethods = (defaultValue?: string) => {
         const value = (defaultValue || HttpMethod.GET).toUpperCase();
-        const { record, changeRecord } = this.props;
+        const { changeRecord } = this.props;
         return (
-            <Select value={value} dropdownMenuStyle={{ maxHeight: 300 }} onChange={e => changeRecord({ ...record, method: e.toString() })} style={{ width: 100 }}>
+            <Select value={value} dropdownMenuStyle={{ maxHeight: 300 }} onChange={e => changeRecord({ ...this.props.record, method: e.toString() })} style={{ width: 100 }}>
                 {
                     Object.keys(HttpMethod).map(k =>
                         <Option key={k} value={k}>{k}</Option>)
@@ -90,14 +105,22 @@ class RequestUrlPanel extends React.Component<RequestUrlPanelProps, RequestUrlPa
         if (this.props.record.name.trim() !== '') {
             return true;
         }
-        message.warning('miss name', 3);
+        message.warning(LocalesString.get('Collection.MissName'), 3);
         return false;
     }
 
-    private onSaveAs = () => {
+    private onClick = (e) => {
+        this[e.key]();
+    }
+
+    saveAs = () => {
         if (this.canSave()) {
             this.setState({ ...this.state, isSaveAsDlgOpen: true });
         }
+    }
+
+    codeSnippet = () => {
+        this.setState({ ...this.state, isCodeSnippetDlgOpen: true });
     }
 
     private onSave = () => {
@@ -126,6 +149,8 @@ class RequestUrlPanel extends React.Component<RequestUrlPanelProps, RequestUrlPa
                 h.id = StringUtil.generateUID();
                 h.isFav = false;
             });
+            (record.queryStrings || []).forEach(q => q.id = StringUtil.generateUID());
+            (record.formDatas || []).forEach(f => f.id = StringUtil.generateUID());
             this.props.saveAs(record);
             this.setState({ ...this.state, isSaveAsDlgOpen: false });
         } else {
@@ -139,13 +164,17 @@ class RequestUrlPanel extends React.Component<RequestUrlPanelProps, RequestUrlPa
 
     private sendRequest = () => {
         const { record, environment } = this.props;
-        let headers = [...record.headers || []];
-        this.props.sendRequest(environment, this.applyAllVariables({ ...record, headers }));
+        this.props.sendRequest(environment, this.applyAllVariables({
+            ...record,
+            headers: [...record.headers || []],
+            queryStrings: [...record.queryStrings || []],
+            formDatas: [...record.formDatas || []]
+        }));
     }
 
     private applyAllVariables: (record: DtoRecord) => DtoRecord | _.Dictionary<DtoRecord> = (record: DtoRecord) => {
-        const { parameters, parameterType } = record;
-        const { currParam, paramArr } = StringUtil.parseParameters(parameters, parameterType, this.props.currentParam);
+        const { parameters, parameterType, reduceAlgorithm } = record;
+        const { currParam, paramArr } = StringUtil.parseParameters(parameters, parameterType, this.props.currentParam, reduceAlgorithm);
         if (paramArr.length === 0) {
             return record;
         }
@@ -160,22 +189,24 @@ class RequestUrlPanel extends React.Component<RequestUrlPanelProps, RequestUrlPa
     }
 
     private applyReqParameterToRecord = (record: DtoRecord, parameter: any) => {
-        const headers = new Array<DtoHeader>();
-        for (let header of record.headers || []) {
-            headers.push({
-                ...header,
-                key: this.applyVariables(header.key, parameter),
-                value: this.applyVariables(header.value, parameter)
-            });
-        }
         return {
             ...record,
             url: this.applyVariables(record.url, parameter),
-            headers,
+            headers: this.applyVariablesToDtoHeaders(record.headers || [], parameter),
+            queryStrings: this.applyVariablesToDtoHeaders(record.queryStrings || [], parameter) as DtoQueryString[],
+            formDatas: this.applyVariablesToDtoHeaders(record.formDatas || [], parameter) as DtoBodyFormData[],
             body: this.applyVariables(record.body, parameter),
             test: this.applyVariables(record.test, parameter),
             prescript: this.applyVariables(record.prescript, parameter)
         };
+    }
+
+    private applyVariablesToDtoHeaders(headers: DtoHeader[], parameter: any) {
+        return (headers || []).map(header => ({
+            ...header,
+            key: this.applyVariables(header.key, parameter),
+            value: this.applyVariables(header.value, parameter)
+        }));
     }
 
     private applyVariables = (content: string | undefined, variables: any) => {
@@ -189,61 +220,93 @@ class RequestUrlPanel extends React.Component<RequestUrlPanelProps, RequestUrlPa
         return newContent;
     }
 
-    private onUrlChanged = (url: string) => {
-        this.props.changeRecord({ ...this.props.record, url });
+    private onUrlChanged = (urlPath: string) => {
+        const record = this.props.record;
+        const queryStrings = _.keyBy((record.queryStrings || []), 'key');
+        const { url, querys } = StringUtil.parseUrl(urlPath);
+        let newQueryStrings = querys.map((q, i) => {
+            const nq = ({ ...(queryStrings[q.key] != null ? queryStrings[q.key] : { id: StringUtil.generateUID(), key: q.key }), value: q.value, sort: i, isActive: true });
+            if (queryStrings[q.key] != null) {
+                delete queryStrings[q.key];
+            }
+            return nq;
+        });
+
+        let needResort = false;
+        Object.keys(queryStrings).forEach(k => {
+            if (!queryStrings[k].isActive) {
+                let index = (record.queryStrings || []).findIndex(r => r.id === queryStrings[k].id);
+                if (index >= 0) {
+                    needResort = true;
+                    index = index > newQueryStrings.length ? newQueryStrings.length : index;
+                    newQueryStrings.splice(index, 0, { ...queryStrings[k], value: queryStrings[k].value || '', sort: index, isActive: false });
+                }
+            }
+        });
+        if (needResort) {
+            newQueryStrings = newQueryStrings.map((q, i) => ({ ...q, sort: i }));
+        }
+        this.props.changeRecord({ ...record, url, queryStrings: newQueryStrings });
     }
 
     public render() {
 
-        const { record, isRequesting, collectionTreeData } = this.props;
+        const { record, isRequesting, collectionTreeData, switchQueryStringDisplay, displayQueryString } = this.props;
 
         const menu = (
-            <Menu onClick={this.onSaveAs}>
-                <Menu.Item key="save_as">Save As</Menu.Item>
+            <Menu onClick={this.onClick}>
+                <Menu.Item key="saveAs">{Msg('Common.SaveAs')}</Menu.Item>
+                <Menu.Item key="codeSnippet">{Msg('Collection.GenerateCodeSnippet')}</Menu.Item>
             </Menu>
         );
 
         return (
             <div className="ant-form-inline url-panel">
                 <div className="ant-row ant-form-item req-url">
-                    <Input
-                        placeholder="please enter url of this request"
+                    <LoInput
+                        placeholderId="Collection.EnterUrlForRequest"
                         size="large"
                         spellCheck={false}
                         onChange={(e) => this.onUrlChanged(e.currentTarget.value)}
                         addonBefore={this.getMethods(record.method)}
-                        value={record.url} />
+                        addonAfter={<Button style={{ height: 32, border: 0, color: '#888888' }} ghost={true} onClick={() => switchQueryStringDisplay(record.id, !displayQueryString)}>Param</Button>}
+                        value={StringUtil.stringifyUrl(record.url || '', record.queryStrings || [])}
+                    />
                 </div>
                 <div className="ant-row ant-form-item req-send">
                     <Button type="primary" icon="rocket" loading={isRequesting} onClick={this.sendRequest}>
-                        Send
+                        {Msg('Common.Send')}
                     </Button>
                 </div>
                 <div className="ant-row ant-form-item req-save" style={{ marginRight: 0 }}>
                     <DButton overlay={menu} onClick={this.onSave}>
-                        Save
+                        {Msg('Common.Save')}
                     </DButton>
                 </div>
 
                 <Modal
-                    title="Save Request"
+                    title={Msg('Common.Save')}
                     visible={this.state.isSaveDlgOpen || this.state.isSaveAsDlgOpen}
-                    okText="OK"
-                    cancelText="Cancel"
                     onOk={this.onSaveNew}
                     onCancel={() => this.setState({ ...this.state, isSaveDlgOpen: false, isSaveAsDlgOpen: false })}
                 >
-                    <div style={{ marginBottom: '8px' }}>Select collection/folder:</div>
+                    <div style={{ marginBottom: '8px' }}>{Msg('Collection.Select')}</div>
                     <TreeSelect
                         allowClear={true}
                         style={{ width: '100%' }}
                         dropdownStyle={{ maxHeight: 500, overflow: 'auto' }}
-                        placeholder="Please select collection / folder"
+                        placeholder={LocalesString.get('Collection.SelectCollectionFolder')}
                         treeDefaultExpandAll={true}
                         value={this.state.selectedFolderId}
                         onChange={(e) => this.setState({ ...this.state, selectedFolderId: e })}
-                        treeData={collectionTreeData} />
+                        treeData={collectionTreeData}
+                    />
                 </Modal>
+                <CodeSnippetDialog
+                    record={record}
+                    isOpen={this.state.isCodeSnippetDlgOpen}
+                    onCancel={() => this.setState({ ...this.state, isCodeSnippetDlgOpen: false })}
+                />
             </div>
         );
     }
@@ -254,6 +317,7 @@ const makeMapStateToProps: MapStateToPropsFactory<any, any> = (initialState: any
     const getActiveEnvId = getActiveEnvIdSelector();
     const getActiveRecord = getActiveRecordSelector();
     const getTreeData = getCollectionTreeDataSelector();
+    const getUIState = getActiveReqResUIStateSelector();
     const mapStateToProps: (state: State) => RequestUrlPanelStateProps = state => {
         const recordState = getRecordState(state);
         return {
@@ -262,7 +326,8 @@ const makeMapStateToProps: MapStateToPropsFactory<any, any> = (initialState: any
             environment: getActiveEnvId(state),
             record: getActiveRecord(state),
             collectionTreeData: getTreeData(state),
-            currentParam: recordState ? recordState.parameter : allParameter
+            currentParam: recordState ? recordState.parameter : allParameter,
+            displayQueryString: getUIState(state).displayQueryString,
         };
     };
     return mapStateToProps;
@@ -274,6 +339,7 @@ const mapDispatchToProps = (dispatch: Dispatch<any>): RequestUrlPanelDispatchPro
         save: (record, isNew, oldId) => dispatch(actionCreator(SaveRecordType, { isNew, record, oldId })),
         saveAs: (record) => dispatch(actionCreator(SaveAsRecordType, { isNew: true, record })),
         sendRequest: (environment, record) => dispatch(actionCreator(SendRequestType, { environment, record })),
+        switchQueryStringDisplay: (recordId, displayQueryString) => dispatch(actionCreator(DisplayQueryStringType, { recordId, displayQueryString })),
     };
 };
 

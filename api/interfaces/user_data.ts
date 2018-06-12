@@ -18,6 +18,8 @@ export interface UserData {
 
     schedules: _.Dictionary<DtoSchedule>;
 
+    schedulePageSize: number;
+
     stresses: _.Dictionary<DtoStress>;
 
     projectFiles: ProjectFiles;
@@ -25,4 +27,8 @@ export interface UserData {
     defaultHeaders: string;
 
     syncInterval: number;
+
+    sync: boolean;
+
+    enableUpload: boolean;
 }

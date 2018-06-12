@@ -1,4 +1,4 @@
-import { Period } from '../../common/period';
+import { Period, TimerType } from '../../common/period';
 import { NotificationMode } from '../../common/notification_mode';
 
 export const defaultSchedule = {
@@ -9,6 +9,7 @@ export const defaultSchedule = {
     needCompare: false,
     compareEnvironmentId: 'eid_456',
     period: Period.daily,
+    timer: TimerType.Day,
     hour: 10,
     notification: NotificationMode.me,
     emails: '',
@@ -17,7 +18,8 @@ export const defaultSchedule = {
     suspend: false,
     scheduleRecords: [],
     ownerId: '',
-    lastRunDate: new Date(2017, 8, 5)
+    lastRunDate: new Date(2017, 8, 5),
+    recordCount: 0
 };
 
 export const defaultUser = {
@@ -44,7 +46,8 @@ export const defaultRunResult = {
     elapsed: 100,
     headers: { ['key1']: 'value1' },
     cookies: ['ck1=ck2;'],
-    host: 'hitchhiker-api.com'
+    host: 'hitchhiker-api.com',
+    consoleMsgQueue: []
 };
 
 export const defaultStress = {
@@ -71,6 +74,6 @@ export const defaultStressRunResult = {
     reqProgress: [],
     stressReqDuration: {},
     stressFailedResult: {}
-}
+};
 
 test('move record');

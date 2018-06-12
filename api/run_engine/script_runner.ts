@@ -8,50 +8,67 @@ import { Sandbox } from './sandbox';
 import * as freeVM from 'vm';
 import { ResObject } from '../common/res_object';
 import { Log } from '../utils/log';
+import { Record, RecordEx } from '../models/record';
+import { ConsoleMsg } from '../interfaces/dto_res';
 const { NodeVM: safeVM } = require('vm2');
 
 export class ScriptRunner {
 
-    static async prerequest(projectId: string, vid: string, envId: string, envName: string, globalFunc: string, code: string): Promise<ResObject> {
-        let hitchhiker, rst;
+    static async prerequest(record: RecordEx): Promise<ResObject> {
+        const { pid, vid, uid, envId, envName, envVariables, prescript } = record;
+        let hitchhiker: Sandbox, res: ResObject;
         try {
-            hitchhiker = new Sandbox(projectId, vid, envId, envName);
+            hitchhiker = new Sandbox(pid, uid || vid, envId, envName, envVariables, record);
         } catch (ex) {
-            rst = { success: false, message: ex };
+            res = { success: false, message: ex };
         }
-        rst = await ScriptRunner.run({ hitchhiker, hh: hitchhiker }, globalFunc, code);
-        return rst;
+
+        res = await ScriptRunner.run({ hitchhiker, hh: hitchhiker, hkr: hitchhiker, console: hitchhiker.console }, prescript);
+        res.result = { request: hitchhiker.request, consoleMsgQueue: hitchhiker.console.msgQueue };
+        return res;
     }
 
-    static async test(projectId: string, vid: string, envId: string, envName: string, res: request.RequestResponse, globalFunc: string, code: string, elapsed: number): Promise<{ tests: _.Dictionary<boolean>, export: {} }> {
+    static async test(record: RecordEx, res: request.RequestResponse): Promise<{ tests: _.Dictionary<boolean>, export: {}, consoleMsgQueue: Array<ConsoleMsg>, error?: string }> {
+        const { pid, vid, uid, envId, envName, envVariables, test } = record;
         let hitchhiker, tests;
         try {
-            hitchhiker = new Sandbox(projectId, vid, envId, envName);
+            hitchhiker = new Sandbox(pid, uid || vid, envId, envName, envVariables, record);
         } catch (ex) {
             tests = {};
             tests[ex] = false;
         }
         if (!hitchhiker) {
-            return { tests, export: undefined };
+            return { tests, export: undefined, consoleMsgQueue: hitchhiker.console.msgQueue };
         }
         tests = hitchhiker.tests;
         const $variables$: any = hitchhiker.variables;
         const $export$ = hitchhiker.export;
 
-        const sandbox = { hitchhiker, hh: hitchhiker, $variables$, $export$, tests, ...ScriptRunner.getInitResObj(res, elapsed) };
+        const sandbox = { hitchhiker, hh: hitchhiker, hkr: hitchhiker, $variables$, $export$, tests, console: hitchhiker.console, ...ScriptRunner.getInitResObj(res) };
 
-        const rst = await ScriptRunner.run(sandbox, globalFunc, code);
+        const rst = await ScriptRunner.run(sandbox, test);
         if (!rst.success) {
             tests[rst.message] = false;
         }
         _.keys(tests).forEach(k => tests[k] = !!tests[k]);
-        return { tests, export: hitchhiker.exportObj.content };
+        return { tests, export: hitchhiker.exportObj.content, consoleMsgQueue: hitchhiker.console.msgQueue, error: rst.success ? undefined : rst.message.toString() };
     }
 
-    private static run(sandbox: any, globalFunc: string, code: string): Promise<ResObject> {
+    private static run(sandbox: any, code: string): Promise<ResObject> {
         let success = true, message = '';
         try {
-            code = 'module.exports = function(callback) { void async function() { try{' + (globalFunc || '') + (code || '') + ' callback();}catch(err){ callback(err);};}(); }';
+            code = `module.exports = function(callback) { 
+                    void async function() { 
+                        let msg;
+                        try{
+                            ${code || ''};
+                        }catch(err){
+                            msg = err;
+                        }finally{
+                            callback(msg);
+                        }
+                    }(); 
+                }`;
             const vm = new safeVM({ timeout: Setting.instance.scriptTimeout, sandbox });
             const runWithCallback = vm.run(code);
             return new Promise<ResObject>((resolve, reject) => {
@@ -72,7 +89,7 @@ export class ScriptRunner {
         return Promise.resolve({ success, message });
     }
 
-    private static getInitResObj(res: request.RequestResponse, elapsed: number) {
+    private static getInitResObj(res: request.RequestResponse) {
         let responseObj = {};
         try {
             responseObj = JSON.parse(res.body); // TODO: more response type, xml, protobuf, zip, chunk...
@@ -84,7 +101,7 @@ export class ScriptRunner {
             responseCode: { code: res.statusCode, name: res.statusMessage },
             responseObj,
             responseHeaders: res.headers,
-            responseTime: elapsed
+            responseTime: res.timingPhases.total >> 0
         };
     }
 }
